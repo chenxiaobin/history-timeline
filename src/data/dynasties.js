@@ -7,21 +7,22 @@ export const majorDynasties = [
   { name: '秦朝', start: -221, end: -206, key: 'Qin' },
   { name: '西汉', start: -202, end: 9, key: 'WesternHan' },
   { name: '新朝', start: 9, end: 23, key: 'Xin' },
-  { name: '东汉', start: 25, end: 220, key: 'EasternHan' },
+  { name: '东汉', start: 25, end: 220, key: 'EasternHan', destroyed: '魏' },
   { name: '三国', start: 220, end: 280 },
   { name: '西晋', start: 265, end: 316, key: 'WesternJin' },
   { name: '东晋', start: 317, end: 420, key: 'EasternJin' },
   { name: '南朝', start: 420, end: 589 },
-  { name: '北朝', start: 439, end: 581 },
+  { name: '北朝', start: 386, end: 581 },
   { name: '隋朝', start: 581, end: 618, key: 'Sui' },
   { name: '唐朝', start: 618, end: 907, key: 'Tang' },
   { name: '五代十国', start: 907, end: 960 },
   { name: '北宋', start: 960, end: 1127, key: 'NorthernSong' },
   { name: '南宋', start: 1127, end: 1279, key: 'SouthernSong' },
   { name: '元朝', start: 1271, end: 1368, key: 'Yuan' },
-  { name: '明朝', start: 1368, end: 1644, key: 'Ming' },
-  { name: '清朝', start: 1644, end: 1912, key: 'Qing' },
-  { name: '中华民国', start: 1912, end: 1949 }
+  { name: '明朝', start: 1368, end: '1644-04-25', key: 'Ming' },
+  { name: '后金', start: 1616, end: 1636, key: 'HouJin' },
+  { name: '清朝', start: 1636, end: '1912-02-12', key: 'Qing' },
+  { name: '中华民国', start: '1912-01-01', end: '1949-10-01', key: 'ROC' }
 ]
 
 // 2. 详细朝代 (细分时期)
@@ -132,6 +133,25 @@ export const detailedDynasties = [
     end: 979,
     belongTo: '十国',
     key: 'TenKingdoms_NorthernHan'
+  },
+  // 中华民国
+  {
+    name: '南京临时政府时期',
+    start: '1912-01-01',
+    end: '1912-04-02',
+    belongTo: '中华民国'
+  },
+  {
+    name: '北洋政府时期',
+    start: '1912-03-12',
+    end: '1928-12-29',
+    belongTo: '中华民国'
+  },
+  {
+    name: '国民政府时期‌',
+    start: '1927-04-18',
+    end: '1949-10-01',
+    belongTo: '中华民国'
   }
 ]
 

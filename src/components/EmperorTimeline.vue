@@ -1,6 +1,7 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { emperors } from '../data/emperors'
+import { useDynastyTimeline } from '../composables/useDynastyTimeline'
 import {
   majorDynasties,
   detailedDynasties,
@@ -25,80 +26,28 @@ const emperorList = computed(() =>
   props.dynastyKey ? emperors[props.dynastyKey] || [] : []
 )
 
+// 使用 Composable 提取公共逻辑
+const {
+  PIXELS_PER_DAY,
+  RULER_WIDTH,
+  START_PADDING,
+  parseDate,
+  formatDate,
+  minDate,
+  totalHeight,
+  ticks
+} = useDynastyTimeline(emperorList, dynastyInfo)
+
 // 配置参数
-const PIXELS_PER_DAY = 0.2 // 每天占用的像素高度 (5天1px)
-const RULER_WIDTH = 80
-const COL_WIDTH = 50
 const COL_GAP = 20
-const START_PADDING = 40
-const END_PADDING = 100
 
-// 日期解析工具
-const parseDate = (dateStr) => {
-  // 如果是数字年份 (如 -221 或 1368)
-  if (typeof dateStr === 'number') {
-    return new Date(dateStr, 0, 1) // 默认为当年1月1日
-  }
+// 皇帝列配置
+const EMP_COL_WIDTH = 50
+const EMP_COL_COUNT = 4 // 预留4列给皇帝
 
-  // 处理字符串日期
-  if (typeof dateStr === 'string') {
-    dateStr = dateStr.trim()
-    // 尝试手动解析 YYYY-MM-DD 或 -YYYY-MM-DD
-    // 正则匹配：可选的负号，年份，月份，日期
-    const match = dateStr.match(/^(-?)(\d+)-(\d+)-(\d+)$/)
-    if (match) {
-      const isBC = match[1] === '-'
-      const year = parseInt(match[2], 10) * (isBC ? -1 : 1)
-      const month = parseInt(match[3], 10) - 1 // 月份从0开始
-      const day = parseInt(match[4], 10)
-
-      const date = new Date(year, month, day)
-      // 修正年份：JS Date构造函数对于 0-99 的年份会处理为 1900-1999
-      // 如果原本就是 0-99 (公元后) 或 负数，需要用 setFullYear 修正
-      date.setFullYear(year)
-      return date
-    }
-  }
-
-  // 兜底
-  return new Date(dateStr)
-}
-
-// 格式化日期显示
-const formatDate = (date) => {
-  const y = date.getFullYear()
-  const m = date.getMonth() + 1
-  const d = date.getDate()
-  const yearStr = y < 0 ? `前${Math.abs(y)}年` : `${y}年`
-  return `${yearStr}年${m}月${d}日`
-}
-
-// 计算时间范围
-// 获取所有皇帝的起止时间，找出最早和最晚的日期
-const allDates = computed(() =>
-  emperorList.value.flatMap((e) => [parseDate(e.start), parseDate(e.end)])
-)
-
-const minDate = computed(() => {
-  if (!allDates.value.length) return new Date()
-  const d = new Date(Math.min(...allDates.value))
-  d.setFullYear(d.getFullYear() - 1)
-  return d
-})
-
-const maxDate = computed(() => {
-  if (!allDates.value.length) return new Date()
-  const d = new Date(Math.max(...allDates.value))
-  d.setFullYear(d.getFullYear() + 1)
-  return d
-})
-
-const totalDays = computed(
-  () => (maxDate.value - minDate.value) / (1000 * 60 * 60 * 24)
-)
-const totalHeight = computed(
-  () => totalDays.value * PIXELS_PER_DAY + START_PADDING + END_PADDING
-)
+// 皇后列配置
+const QUEEN_COL_WIDTH = 30
+const QUEEN_COL_COUNT = 4 // 预留4列给皇后
 
 const colors = [
   '#b71c1c', // Red 900
@@ -120,14 +69,12 @@ const colors = [
   '#263238' // Blue Grey 900
 ]
 
-// 布局计算
-const processedEmperors = computed(() => {
-  if (!emperorList.value.length) return []
-
+// 通用布局计算函数
+const calculateLayout = (items, colWidth, startOffset, colorOffset = 0) => {
   const cols = []
-  return emperorList.value.map((emp, index) => {
-    const startDate = parseDate(emp.start)
-    const endDate = parseDate(emp.end)
+  return items.map((item, index) => {
+    const startDate = parseDate(item.start)
+    const endDate = parseDate(item.end)
     const startDays = (startDate - minDate.value) / (1000 * 60 * 60 * 24)
     const endDays = (endDate - minDate.value) / (1000 * 60 * 60 * 24)
     const durationDays = endDays - startDays
@@ -162,22 +109,66 @@ const processedEmperors = computed(() => {
 
     let colIndex = -1
     // 简单贪心算法 (基于天数)
-    for (let i = 0; i < cols.length; i++) {
-      if (cols[i] <= startDays) {
-        colIndex = i
-        break
+    // 如果是民国 (1912年及以后)，则使用特殊的分列逻辑
+    if (startDate.getFullYear() >= 1912) {
+      const year = startDate.getFullYear()
+      const title = item.templeName || ''
+      const name = item.name
+
+      // 1. 南京临时政府
+      if (title.includes('南京临时政府')) {
+        colIndex = 0
+      }
+      // 2. 国民政府
+      else if (title.includes('国民政府')) {
+        // 国民政府使用第3列(index 2)和第4列(index 3)
+        // 使用 epsilon 处理浮点数精度问题，允许无缝衔接
+        const EPSILON = 0.001
+        const col2End = cols[2] !== undefined ? cols[2] : -Infinity
+        const col3End = cols[3] !== undefined ? cols[3] : -Infinity
+
+        // 优先尝试第3列 (index 2)
+        if (startDays >= col2End - EPSILON) {
+          colIndex = 2
+        }
+        // 如果冲突，尝试第4列 (index 3)
+        else if (startDays >= col3End - EPSILON) {
+          colIndex = 3
+        }
+        // 如果都冲突，强制放入第4列（或根据需要放入更后面的列，但目前只有4列）
+        else {
+          colIndex = 3
+        }
+      }
+      // 3. 北洋政府 (兜底)
+      else {
+        colIndex = 1
+      }
+    } else {
+      // 传统朝代：贪心算法
+      for (let i = 0; i < cols.length; i++) {
+        if (cols[i] <= startDays) {
+          colIndex = i
+          break
+        }
+      }
+      if (colIndex === -1) {
+        colIndex = cols.length
       }
     }
-    if (colIndex === -1) {
-      colIndex = cols.length
+
+    // 更新列的结束时间 (取最大值以处理重叠情况)
+    if (colIndex !== -1) {
+      const currentEnd =
+        cols[colIndex] !== undefined ? cols[colIndex] : -Infinity
+      cols[colIndex] = Math.max(currentEnd, endDays)
     }
-    cols[colIndex] = endDays
 
     return {
-      ...emp,
+      ...item,
       colIndex,
-      color: colors[index % colors.length],
-      left: RULER_WIDTH + 20 + colIndex * (COL_WIDTH + COL_GAP),
+      color: colors[(index + colorOffset) % colors.length],
+      left: startOffset + colIndex * (colWidth + COL_GAP),
       top: startDays * PIXELS_PER_DAY + START_PADDING,
       height: Math.max(durationDays * PIXELS_PER_DAY, 20), // 最小高度20px
       durationDisplay,
@@ -185,49 +176,84 @@ const processedEmperors = computed(() => {
       endDateStr: formatDate(endDate)
     }
   })
+}
+
+// 皇帝布局计算
+const processedEmperors = computed(() => {
+  if (!emperorList.value.length) return []
+  const startOffset = RULER_WIDTH + 20
+  return calculateLayout(emperorList.value, EMP_COL_WIDTH, startOffset, 0)
 })
 
-const maxCol = computed(() => {
-  if (!processedEmperors.value.length) return 0
-  return Math.max(...processedEmperors.value.map((e) => e.colIndex))
+// 皇后布局计算
+const processedQueens = computed(() => {
+  if (!emperorList.value.length) return []
+
+  // 提取所有皇后
+  const allQueens = []
+  emperorList.value.forEach((emp) => {
+    if (emp.queens && emp.queens.length) {
+      emp.queens.forEach((q) => {
+        allQueens.push({
+          ...q,
+          isQueen: true,
+          emperorName: emp.name // 关联皇帝名字
+        })
+      })
+    }
+  })
+
+  if (!allQueens.length) return []
+
+  // 皇后区域起始位置：标尺 + 边距 + 皇帝区宽度(固定3列) + 间隔
+  const startOffset =
+    RULER_WIDTH + 20 + EMP_COL_COUNT * (EMP_COL_WIDTH + COL_GAP) + COL_GAP
+  // 皇后颜色偏移一点，避免和皇帝颜色完全同步重复
+  return calculateLayout(allQueens, QUEEN_COL_WIDTH, startOffset, 5)
 })
 
 const contentWidth = computed(() => {
-  return RULER_WIDTH + 20 + (maxCol.value + 1) * (COL_WIDTH + COL_GAP) + 50
+  // 总宽度 = 标尺 + 边距 + 皇帝区(3列) + 间隔 + 皇后区(3列) + 边距
+  // 这里皇后区也预留3列的宽度，或者根据实际皇后列数动态计算？
+  // 用户需求是“皇后占4-6列”，暗示也是3列空间。
+  // 为了保险，我们取 (实际皇后最大列数 和 3) 的最大值
+  let queenMaxCol = 0
+  if (processedQueens.value.length) {
+    queenMaxCol = Math.max(...processedQueens.value.map((q) => q.colIndex))
+  }
+  const actualQueenCols = Math.max(queenMaxCol + 1, QUEEN_COL_COUNT)
+
+  return (
+    RULER_WIDTH +
+    20 +
+    EMP_COL_COUNT * (EMP_COL_WIDTH + COL_GAP) +
+    COL_GAP +
+    actualQueenCols * (QUEEN_COL_WIDTH + COL_GAP) +
+    50
+  )
 })
 
-// 刻度生成 (按年和月生成)
-const ticks = computed(() => {
-  const arr = []
-  const startYear = minDate.value.getFullYear()
-  const endYear = maxDate.value.getFullYear()
+// 背景区域配置
+const bgZones = computed(() => {
+  const empZoneWidth = EMP_COL_COUNT * (EMP_COL_WIDTH + COL_GAP) + COL_GAP / 2
+  const queenStart =
+    RULER_WIDTH + 20 + EMP_COL_COUNT * (EMP_COL_WIDTH + COL_GAP) + COL_GAP / 2
+  // 皇后区宽度：剩余空间或者固定3列
+  // 暂时按预留空间画背景
+  const queenZoneWidth = QUEEN_COL_COUNT * (QUEEN_COL_WIDTH + COL_GAP) + COL_GAP
 
-  for (let y = startYear; y <= endYear; y++) {
-    // 年刻度
-    const yearDate = new Date(y, 0, 1)
-    const yearDays = (yearDate - minDate.value) / (1000 * 60 * 60 * 24)
-    if (yearDays >= 0 && yearDays <= totalDays.value) {
-      arr.push({
-        type: 'year',
-        label: y < 0 ? `前${Math.abs(y)}年` : `${y}年`, // 格式化年份显示
-        top: yearDays * PIXELS_PER_DAY + START_PADDING,
-        isFirst: y === startYear // 标记是否为第一个刻度
-      })
+  return [
+    {
+      left: RULER_WIDTH + 20 - COL_GAP / 2,
+      width: empZoneWidth,
+      color: 'rgba(173, 216, 230, 0.1)' // 极淡蓝 (皇帝)
+    },
+    {
+      left: queenStart,
+      width: queenZoneWidth,
+      color: 'rgba(255, 182, 193, 0.1)' // 极淡红 (皇后)
     }
-
-    // 月刻度 (1-11月，因为1月和年刻度重合，这里只画2-12月)
-    for (let m = 1; m < 12; m++) {
-      const monthDate = new Date(y, m, 1)
-      const monthDays = (monthDate - minDate.value) / (1000 * 60 * 60 * 24)
-      if (monthDays >= 0 && monthDays <= totalDays.value) {
-        arr.push({
-          type: 'month',
-          top: monthDays * PIXELS_PER_DAY + START_PADDING
-        })
-      }
-    }
-  }
-  return arr
+  ]
 })
 
 // Tooltip
@@ -239,16 +265,23 @@ const tooltip = ref({
   range: ''
 })
 
-const showTooltip = (e, emp) => {
+const showTooltip = (e, item) => {
+  const startYear = parseDate(item.start).getFullYear()
+  const isModern = startYear >= 1912
+
   tooltip.value = {
     show: true,
     x: e.clientX + 15,
     y: e.clientY + 15,
-    name: `${emp.name} (在位${emp.durationDisplay})`,
-    range: `${emp.startDateStr} - ${emp.endDateStr}`,
-    era: emp.era && emp.era.length ? emp.era.join('、') : '无',
-    temple: emp.templeName || '无',
-    posthumous: emp.posthumousName || '无'
+    name: item.isQueen
+      ? `${item.name} (${item.emperorName}皇后)`
+      : `${item.name} (${isModern ? '在职' : '在位'}${item.durationDisplay})`,
+    range: `${item.startDateStr} - ${item.endDateStr}`,
+    era: item.era && item.era.length ? item.era.join('、') : '无',
+    temple: item.templeName || '无',
+    posthumous: item.posthumousName || '无',
+    isQueen: item.isQueen,
+    isModern
   }
 }
 
@@ -267,12 +300,36 @@ const hideTooltip = () => {
 <template>
   <div class="timeline-container">
     <div class="header">
-      <h2 v-if="dynastyInfo">{{ dynastyInfo.name }} - 皇帝/君主时间线</h2>
+      <h2 v-if="dynastyInfo">{{ dynastyInfo.name }} - 执政者时间线</h2>
       <h2 v-else>未找到朝代信息</h2>
     </div>
 
     <div class="timeline-scroll" v-if="dynastyInfo">
       <svg :width="contentWidth" :height="totalHeight" class="timeline-svg">
+        <!-- 分区背景底色 -->
+        <g class="bg-zones">
+          <rect
+            v-for="(zone, index) in bgZones"
+            :key="'zone-' + index"
+            :x="zone.left"
+            y="0"
+            :width="zone.width"
+            :height="totalHeight"
+            :fill="zone.color"
+          />
+          <!-- 垂直分隔线 -->
+          <line
+            v-if="bgZones.length > 1"
+            :x1="bgZones[0].left + bgZones[0].width"
+            y1="0"
+            :x2="bgZones[0].left + bgZones[0].width"
+            :y2="totalHeight"
+            stroke="#ccc"
+            stroke-width="1"
+            stroke-dasharray="5 5"
+          />
+        </g>
+
         <!-- 标尺线 -->
         <line
           :x1="RULER_WIDTH"
@@ -320,43 +377,115 @@ const hideTooltip = () => {
         </g>
 
         <!-- 皇帝区块 -->
-        <g
-          v-for="emp in processedEmperors"
-          :key="emp.name"
-          class="emperor-item"
-          :transform="`translate(${emp.left}, ${emp.top})`"
-          @mouseenter="showTooltip($event, emp)"
-          @mousemove="moveTooltip($event)"
-          @mouseleave="hideTooltip"
-        >
-          <rect
-            x="0"
-            y="0"
-            :width="COL_WIDTH"
-            :height="emp.height"
-            rx="4"
-            :fill="emp.color"
-            stroke="#fff"
-            stroke-width="1"
-            opacity="0.9"
-          />
-          <!-- 名字 -->
-          <text
-            :x="COL_WIDTH / 2"
-            :y="emp.height / 2"
-            dy="4"
-            text-anchor="middle"
-            fill="#fff"
-            font-size="12"
-            font-weight="bold"
-            style="
-              writing-mode: vertical-rl;
-              text-orientation: upright;
-              pointer-events: none;
-            "
+        <g class="emperors">
+          <g
+            v-for="emp in processedEmperors"
+            :key="emp.name + emp.start"
+            class="emperor-item"
+            :transform="`translate(${emp.left}, ${emp.top})`"
+            @mouseenter="showTooltip($event, emp)"
+            @mousemove="moveTooltip($event)"
+            @mouseleave="hideTooltip"
           >
-            {{ emp.name }}
-          </text>
+            <rect
+              x="0"
+              y="0"
+              :width="EMP_COL_WIDTH"
+              :height="emp.height"
+              rx="4"
+              :fill="emp.color"
+              stroke="#fff"
+              stroke-width="1"
+              opacity="0.9"
+            />
+            <!-- 名字 -->
+            <text
+              :x="EMP_COL_WIDTH / 2"
+              :y="emp.height / 2"
+              dy="4"
+              text-anchor="middle"
+              fill="#fff"
+              font-size="12"
+              font-weight="bold"
+              style="
+                writing-mode: vertical-rl;
+                text-orientation: upright;
+                pointer-events: none;
+              "
+            >
+              {{
+                (() => {
+                  // 预估每个字符的高度 (字体12px + 间距)
+                  const CHAR_H = 14
+                  const PADDING = 8
+                  const maxChars = Math.floor((emp.height - PADDING) / CHAR_H)
+
+                  if (emp.name.length <= maxChars) {
+                    return emp.name
+                  }
+
+                  // 需要截断
+                  // 如果高度特别小 (如 < 30px)，只显示第一个字
+                  if (emp.height < 30) {
+                    return (
+                      emp.name.substring(0, 1) + (emp.height > 20 ? '.' : '')
+                    )
+                  }
+
+                  // 否则显示尽可能多的字 + ..
+                  const keep = Math.max(1, maxChars - 1)
+                  return emp.name.substring(0, keep) + '..'
+                })()
+              }}
+            </text>
+          </g>
+        </g>
+
+        <!-- 皇后区块 -->
+        <g class="queens">
+          <g
+            v-for="queen in processedQueens"
+            :key="queen.name + queen.start"
+            class="queen-item"
+            :transform="`translate(${queen.left}, ${queen.top})`"
+            @mouseenter="showTooltip($event, queen)"
+            @mousemove="moveTooltip($event)"
+            @mouseleave="hideTooltip"
+          >
+            <rect
+              x="0"
+              y="0"
+              :width="QUEEN_COL_WIDTH"
+              :height="queen.height"
+              rx="4"
+              :fill="queen.color"
+              stroke="#fff"
+              stroke-width="1"
+              opacity="0.9"
+            />
+            <!-- 名字 (小一点) -->
+            <text
+              :x="QUEEN_COL_WIDTH / 2"
+              :y="queen.height / 2"
+              dy="4"
+              text-anchor="middle"
+              fill="#fff"
+              font-size="10"
+              style="
+                writing-mode: vertical-rl;
+                text-orientation: upright;
+                pointer-events: none;
+              "
+            >
+              {{
+                queen.height < 30 && queen.name.length > 1
+                  ? queen.name.substring(0, 1) + '~'
+                  : queen.height < 50 && queen.name.length > 2
+                    ? queen.name.substring(0, 2) + '~'
+                    : queen.name
+              }}
+            </text>
+          </g>
         </g>
       </svg>
     </div>
@@ -369,9 +498,18 @@ const hideTooltip = () => {
     >
       <div class="tooltip-name">{{ tooltip.name }}</div>
       <div class="tooltip-range">{{ tooltip.range }}</div>
-      <div class="tooltip-detail">年号：{{ tooltip.era }}</div>
-      <div class="tooltip-detail">庙号：{{ tooltip.temple }}</div>
-      <div class="tooltip-detail">谥号：{{ tooltip.posthumous }}</div>
+      <template v-if="!tooltip.isQueen">
+        <template v-if="tooltip.isModern">
+          <div class="tooltip-detail">职务：{{ tooltip.temple }}</div>
+        </template>
+        <template v-else>
+          <div class="tooltip-detail">年号：{{ tooltip.era }}</div>
+          <div class="tooltip-detail">庙号：{{ tooltip.temple }}</div>
+        </template>
+      </template>
+      <div class="tooltip-detail" v-if="!tooltip.isModern">
+        谥号：{{ tooltip.posthumous }}
+      </div>
     </div>
   </div>
 </template>
@@ -398,7 +536,7 @@ const hideTooltip = () => {
 
 .header h2 {
   flex: 1;
-  /* text-align: center; */
+  text-align: center;
   font-size: 18px;
   font-weight: bold;
   color: #333;
@@ -412,6 +550,12 @@ const hideTooltip = () => {
 }
 
 .emperor-item:hover rect {
+  opacity: 1;
+  filter: brightness(1.1);
+  cursor: pointer;
+}
+
+.queen-item:hover rect {
   opacity: 1;
   filter: brightness(1.1);
   cursor: pointer;

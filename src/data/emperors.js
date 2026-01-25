@@ -597,7 +597,12 @@ export const emperors = {
       start: '-202-02-28',
       end: '-195-06-01',
       queens: [
-        { name: '吕雉', posthumousName: '高皇后', start: '-202', end: '-180' }
+        {
+          name: '吕雉',
+          posthumousName: '高皇后',
+          start: '-202-02-28',
+          end: '-180-08-18'
+        }
       ]
     },
     {
@@ -607,7 +612,14 @@ export const emperors = {
       era: [],
       start: '-195-06-23',
       end: '-188-09-26',
-      queens: []
+      queens: [
+        {
+          name: '张嫣',
+          posthumousName: '孝惠皇后',
+          start: '-192-11',
+          end: '-163-04'
+        }
+      ]
     },
     {
       name: '吕雉',
@@ -625,7 +637,14 @@ export const emperors = {
       era: ['前元', '后元'],
       start: '-180-11-14',
       end: '-157-07-06',
-      queens: []
+      queens: [
+        {
+          name: '窦氏',
+          posthumousName: '孝文皇后',
+          start: '-179-03',
+          end: '-135-06'
+        }
+      ]
     },
     {
       name: '刘启',
@@ -634,7 +653,15 @@ export const emperors = {
       era: ['前元', '中元', '后元'],
       start: '-157-07-14',
       end: '-141-03-09',
-      queens: []
+      queens: [
+        { name: '薄氏', posthumousName: '', start: '-157-07', end: '-151-09' },
+        {
+          name: '王娡',
+          posthumousName: '孝景皇后',
+          start: '-150-05',
+          end: '-126-06'
+        }
+      ]
     },
     {
       name: '刘彻',
@@ -658,8 +685,18 @@ export const emperors = {
       start: '-141-03-09',
       end: '-87-03-29',
       queens: [
-        { name: '陈阿娇', posthumousName: '', start: '-141', end: '-130' },
-        { name: '卫子夫', posthumousName: '思皇后', start: '-128', end: '-91' }
+        {
+          name: '陈阿娇',
+          posthumousName: '',
+          start: '-141-04',
+          end: '-130-07'
+        },
+        {
+          name: '卫子夫',
+          posthumousName: '思皇后',
+          start: '-128-04',
+          end: '-91-09'
+        }
       ]
     },
     {
@@ -669,7 +706,14 @@ export const emperors = {
       era: ['始元', '元凤', '元平'],
       start: '-87-03-30',
       end: '-74-06-05',
-      queens: []
+      queens: [
+        {
+          name: '上官氏',
+          posthumousName: '孝昭皇后',
+          start: '-83-04',
+          end: '-37-06'
+        }
+      ]
     },
     {
       name: '刘询',
@@ -678,7 +722,21 @@ export const emperors = {
       era: ['本始', '地节', '元康', '神爵', '五凤', '甘露', '黄龙'],
       start: '-74-09-10',
       end: '-48-01-10',
-      queens: []
+      queens: [
+        {
+          name: '许平君',
+          posthumousName: '恭哀皇后',
+          start: '-74-12',
+          end: '-71-03'
+        },
+        { name: '霍成君', posthumousName: '', start: '-70-04', end: '-66-09' },
+        {
+          name: '王氏',
+          posthumousName: '孝宣皇后',
+          start: '-64-03',
+          end: '-16-09'
+        }
+      ]
     },
     {
       name: '刘奭',
@@ -687,7 +745,14 @@ export const emperors = {
       era: ['初元', '永光', '建昭', '竟宁'],
       start: '-48-01-10',
       end: '-33-07-08',
-      queens: []
+      queens: [
+        {
+          name: '王政君',
+          posthumousName: '孝元皇后',
+          start: '-48-02',
+          end: '13-02'
+        }
+      ]
     },
     {
       name: '刘骜',
@@ -696,7 +761,10 @@ export const emperors = {
       era: ['建始', '河平', '阳朔', '鸿嘉', '永始', '元延', '绥和'],
       start: '-33-07-10',
       end: '-7-04-17',
-      queens: []
+      queens: [
+        { name: '许氏', posthumousName: '孝成皇后', start: '-31', end: '-18' },
+        { name: '赵飞燕', posthumousName: '孝成皇后', start: '-16', end: '-1' }
+      ]
     },
     {
       name: '刘欣',
@@ -705,7 +773,9 @@ export const emperors = {
       era: ['建平', '太初元将', '元寿'],
       start: '-7-05-07',
       end: '-1-08-15',
-      queens: []
+      queens: [
+        { name: '傅氏', posthumousName: '孝哀皇后', start: '-6', end: '-1' }
+      ]
     },
     {
       name: '刘衎',
@@ -714,7 +784,9 @@ export const emperors = {
       era: ['元始'],
       start: '-1-10-17',
       end: '6-02-03',
-      queens: []
+      queens: [
+        { name: '王氏', posthumousName: '孝平皇后', start: '4', end: '23' }
+      ]
     },
     {
       name: '刘婴',
@@ -745,7 +817,10 @@ export const emperors = {
       era: ['建武', '建武中元'],
       start: '25-08-05',
       end: '57-03-29',
-      queens: []
+      queens: [
+        { name: '郭圣通', posthumousName: '', start: '26', end: '41' },
+        { name: '阴丽华', posthumousName: '光烈皇后', start: '41', end: '64' }
+      ]
     },
     {
       name: '刘庄',
@@ -754,7 +829,9 @@ export const emperors = {
       era: ['永平'],
       start: '57-03-29',
       end: '75-09-05',
-      queens: []
+      queens: [
+        { name: '马氏', posthumousName: '明德皇后', start: '60', end: '79' }
+      ]
     },
     {
       name: '刘炟',
@@ -763,7 +840,9 @@ export const emperors = {
       era: ['建初', '元和', '章和'],
       start: '75-09-05',
       end: '88-04-09',
-      queens: []
+      queens: [
+        { name: '窦氏', posthumousName: '章德皇后', start: '78', end: '97' }
+      ]
     },
     {
       name: '刘肇',
@@ -772,7 +851,10 @@ export const emperors = {
       era: ['永元', '元兴'],
       start: '88-04-09',
       end: '106-02-13',
-      queens: []
+      queens: [
+        { name: '阴氏', posthumousName: '', start: '96', end: '102' },
+        { name: '邓绥', posthumousName: '和熹皇后', start: '102', end: '121' }
+      ]
     },
     {
       name: '刘隆',
@@ -790,7 +872,9 @@ export const emperors = {
       era: ['永初', '元初', '永宁', '建光', '延光'],
       start: '106-09-21',
       end: '125-04-30',
-      queens: []
+      queens: [
+        { name: '阎姬', posthumousName: '安思皇后', start: '115', end: '126' }
+      ]
     },
     {
       name: '刘保',
@@ -799,7 +883,9 @@ export const emperors = {
       era: ['永建', '阳嘉', '永和', '汉安', '建康'],
       start: '125-12-16',
       end: '144-09-20',
-      queens: []
+      queens: [
+        { name: '梁纳', posthumousName: '顺烈皇后', start: '132', end: '150' }
+      ]
     },
     {
       name: '刘炳',
@@ -826,7 +912,16 @@ export const emperors = {
       era: ['建和', '和平', '元嘉', '永兴', '永寿', '延熹', '永康'],
       start: '146-08-01',
       end: '168-01-25',
-      queens: []
+      queens: [
+        {
+          name: '梁女莹',
+          posthumousName: '懿献皇后',
+          start: '147',
+          end: '159'
+        },
+        { name: '邓猛女', posthumousName: '', start: '159', end: '165' },
+        { name: '窦妙', posthumousName: '桓思皇后', start: '165', end: '172' }
+      ]
     },
     {
       name: '刘宏',
@@ -835,7 +930,10 @@ export const emperors = {
       era: ['建宁', '熹平', '光和', '中平'],
       start: '168-02-17',
       end: '189-05-13',
-      queens: []
+      queens: [
+        { name: '宋氏', posthumousName: '', start: '171', end: '178' },
+        { name: '何氏', posthumousName: '灵思皇后', start: '180', end: '189' }
+      ]
     },
     {
       name: '刘协',
@@ -854,7 +952,10 @@ export const emperors = {
       ],
       start: '189-09-28',
       end: '220-12-11',
-      queens: []
+      queens: [
+        { name: '伏寿', posthumousName: '', start: '195', end: '214' },
+        { name: '曹节', posthumousName: '献穆皇后', start: '215', end: '260' }
+      ]
     }
   ],
   CaoWei: [
@@ -865,7 +966,9 @@ export const emperors = {
       era: ['黄初'],
       start: 220,
       end: 226,
-      queens: []
+      queens: [
+        { name: '郭女王', posthumousName: '文德皇后', start: '222', end: '235' }
+      ]
     },
     {
       name: '曹叡',
@@ -874,7 +977,10 @@ export const emperors = {
       era: ['太和', '青龙', '景初'],
       start: 226,
       end: 239,
-      queens: []
+      queens: [
+        { name: '毛氏', posthumousName: '明悼皇后', start: '227', end: '237' },
+        { name: '郭氏', posthumousName: '明元皇后', start: '239', end: '264' }
+      ]
     },
     {
       name: '曹芳',
@@ -883,7 +989,11 @@ export const emperors = {
       era: ['正始', '嘉平'],
       start: 239,
       end: 254,
-      queens: []
+      queens: [
+        { name: '甄氏', posthumousName: '怀皇后', start: '243', end: '251' },
+        { name: '张氏', posthumousName: '', start: '252', end: '254' },
+        { name: '王氏', posthumousName: '', start: '254', end: '254' }
+      ]
     },
     {
       name: '曹髦',
@@ -892,7 +1002,7 @@ export const emperors = {
       era: ['正元', '甘露'],
       start: 254,
       end: 260,
-      queens: []
+      queens: [{ name: '卞氏', posthumousName: '', start: '255', end: '260' }]
     },
     {
       name: '曹奂',
@@ -901,7 +1011,7 @@ export const emperors = {
       era: ['景元', '咸熙'],
       start: 260,
       end: 265,
-      queens: []
+      queens: [{ name: '卞氏', posthumousName: '', start: '263', end: '265' }]
     }
   ],
   ShuHan: [
@@ -912,7 +1022,9 @@ export const emperors = {
       era: ['章武'],
       start: 221,
       end: 223,
-      queens: []
+      queens: [
+        { name: '吴氏', posthumousName: '穆皇后', start: '221', end: '245' }
+      ]
     },
     {
       name: '刘禅',
@@ -921,7 +1033,10 @@ export const emperors = {
       era: ['建兴', '延熙', '景耀', '炎兴'],
       start: 223,
       end: 263,
-      queens: []
+      queens: [
+        { name: '张氏', posthumousName: '敬哀皇后', start: '223', end: '237' },
+        { name: '张氏', posthumousName: '', start: '238', end: '263' }
+      ]
     }
   ],
   EasternWu: [
@@ -932,7 +1047,9 @@ export const emperors = {
       era: ['黄武', '黄龙', '嘉禾', '赤乌', '太元', '神凤'],
       start: 229,
       end: 252,
-      queens: []
+      queens: [
+        { name: '潘氏', posthumousName: '潘皇后', start: '251', end: '252' }
+      ]
     },
     {
       name: '孙亮',
@@ -941,7 +1058,9 @@ export const emperors = {
       era: ['建兴', '五凤', '太平'],
       start: 252,
       end: 258,
-      queens: []
+      queens: [
+        { name: '全氏', posthumousName: '全皇后', start: '253', end: '258' }
+      ]
     },
     {
       name: '孙休',
@@ -950,7 +1069,9 @@ export const emperors = {
       era: ['永安'],
       start: 258,
       end: 264,
-      queens: []
+      queens: [
+        { name: '朱氏', posthumousName: '朱皇后', start: '262', end: '265' }
+      ]
     },
     {
       name: '孙皓',
@@ -959,7 +1080,9 @@ export const emperors = {
       era: ['元兴', '甘露', '宝鼎', '建衡', '凤凰', '天册', '天玺', '天纪'],
       start: 264,
       end: 280,
-      queens: []
+      queens: [
+        { name: '滕氏', posthumousName: '滕皇后', start: '264', end: '280' }
+      ]
     }
   ],
   LiuSong: [
@@ -1631,7 +1754,14 @@ export const emperors = {
       era: ['开皇', '仁寿'],
       start: '581-03-04',
       end: '604-08-13',
-      queens: []
+      queens: [
+        {
+          name: '独孤伽罗',
+          posthumousName: '文献皇后',
+          start: '581',
+          end: '602'
+        }
+      ]
     },
     {
       name: '杨广',
@@ -1640,7 +1770,9 @@ export const emperors = {
       era: ['大业'],
       start: '604-08-21',
       end: '618-04-11',
-      queens: []
+      queens: [
+        { name: '萧氏', posthumousName: '愍皇后', start: '605', end: '618' }
+      ]
     }
   ],
   Tang: [
@@ -1661,7 +1793,12 @@ export const emperors = {
       start: '626-09-04',
       end: '649-07-10',
       queens: [
-        { name: '长孙氏', posthumousName: '文德皇后', start: '626', end: '636' }
+        {
+          name: '长孙氏',
+          posthumousName: '文德皇后',
+          start: '626-09',
+          end: '636-07'
+        }
       ]
     },
     {
@@ -1687,12 +1824,12 @@ export const emperors = {
       start: '649-07-15',
       end: '683-12-27',
       queens: [
-        { name: '王氏', posthumousName: '', start: '650', end: '655' },
+        { name: '王氏', posthumousName: '', start: '650-02', end: '655-11' },
         {
           name: '武曌',
           posthumousName: '则天大圣皇帝',
-          start: '655',
-          end: '683'
+          start: '655-11',
+          end: '690-10-16'
         }
       ]
     },
@@ -1703,7 +1840,9 @@ export const emperors = {
       era: ['嗣圣'],
       start: '684-01-03',
       end: '684-02-26',
-      queens: []
+      queens: [
+        { name: '韦氏', posthumousName: '韦皇后', start: '705', end: '710' }
+      ]
     },
     {
       name: '李旦',
@@ -1749,7 +1888,9 @@ export const emperors = {
       era: ['神龙', '景龙'],
       start: '705-02-23',
       end: '710-07-03',
-      queens: []
+      queens: [
+        { name: '韦氏', posthumousName: '韦皇后', start: '705', end: '710' }
+      ]
     },
     {
       name: '李旦',
@@ -1767,7 +1908,14 @@ export const emperors = {
       era: ['先天', '开元', '天宝'],
       start: '712-09-08',
       end: '756-08-12',
-      queens: []
+      queens: [
+        {
+          name: '王氏',
+          posthumousName: '王皇后',
+          start: '712-09',
+          end: '724-08'
+        }
+      ]
     },
     {
       name: '李亨',
@@ -1776,7 +1924,14 @@ export const emperors = {
       era: ['至德', '乾元', '上元'],
       start: '756-08-12',
       end: '762-05-16',
-      queens: []
+      queens: [
+        {
+          name: '张氏',
+          posthumousName: '张皇后',
+          start: '758-05',
+          end: '762-05'
+        }
+      ]
     },
     {
       name: '李豫',
@@ -1794,7 +1949,9 @@ export const emperors = {
       era: ['建中', '兴元', '贞元'],
       start: '779-06-12',
       end: '805-02-11',
-      queens: []
+      queens: [
+        { name: '王氏', posthumousName: '昭德皇后', start: '786', end: '786' }
+      ]
     },
     {
       name: '李诵',
@@ -1904,7 +2061,20 @@ export const emperors = {
       era: ['建隆', '乾德', '开宝'],
       start: '960-02-04',
       end: '976-11-14',
-      queens: []
+      queens: [
+        {
+          name: '王氏',
+          posthumousName: '孝明皇后',
+          start: '960-02',
+          end: '963-12'
+        },
+        {
+          name: '宋氏',
+          posthumousName: '孝章皇后',
+          start: '968-02',
+          end: '995-06'
+        }
+      ]
     },
     {
       name: '赵光义',
@@ -1913,7 +2083,14 @@ export const emperors = {
       era: ['太平兴国', '雍熙', '端拱', '淳化', '至道'],
       start: '976-11-15',
       end: '997-05-08',
-      queens: []
+      queens: [
+        {
+          name: '李氏',
+          posthumousName: '明德皇后',
+          start: '984-12',
+          end: '1004-04'
+        }
+      ]
     },
     {
       name: '赵恒',
@@ -1922,7 +2099,20 @@ export const emperors = {
       era: ['咸平', '景德', '大中祥符', '天禧', '乾兴'],
       start: '997-05-10',
       end: '1022-03-23',
-      queens: []
+      queens: [
+        {
+          name: '郭氏',
+          posthumousName: '章穆皇后',
+          start: '997-05',
+          end: '1007-05'
+        },
+        {
+          name: '刘氏',
+          posthumousName: '章献明肃皇后',
+          start: '1012-12',
+          end: '1033-04'
+        }
+      ]
     },
     {
       name: '赵祯',
@@ -1941,7 +2131,15 @@ export const emperors = {
       ],
       start: '1022-03-24',
       end: '1063-04-30',
-      queens: []
+      queens: [
+        { name: '郭氏', posthumousName: '', start: '1024-12', end: '1033-12' },
+        {
+          name: '曹氏',
+          posthumousName: '慈圣光献皇后',
+          start: '1034-09',
+          end: '1079-11'
+        }
+      ]
     },
     {
       name: '赵曙',
@@ -1950,7 +2148,14 @@ export const emperors = {
       era: ['治平'],
       start: '1063-05-01',
       end: '1067-01-25',
-      queens: []
+      queens: [
+        {
+          name: '高氏',
+          posthumousName: '宣仁圣烈皇后',
+          start: '1063',
+          end: '1093'
+        }
+      ]
     },
     {
       name: '赵顼',
@@ -1959,7 +2164,14 @@ export const emperors = {
       era: ['熙宁', '元丰'],
       start: '1067-01-26',
       end: '1085-04-01',
-      queens: []
+      queens: [
+        {
+          name: '向氏',
+          posthumousName: '钦圣宪肃皇后',
+          start: '1068',
+          end: '1101'
+        }
+      ]
     },
     {
       name: '赵煦',
@@ -1968,7 +2180,15 @@ export const emperors = {
       era: ['元祐', '绍圣', '元符'],
       start: '1085-04-01',
       end: '1100-02-23',
-      queens: []
+      queens: [
+        {
+          name: '孟氏',
+          posthumousName: '昭慈圣献皇后',
+          start: '1092',
+          end: '1096'
+        },
+        { name: '刘氏', posthumousName: '昭怀皇后', start: '1099', end: '1113' }
+      ]
     },
     {
       name: '赵佶',
@@ -1977,7 +2197,15 @@ export const emperors = {
       era: ['建中靖国', '崇宁', '大观', '政和', '重和', '宣和'],
       start: '1100-02-23',
       end: '1126-01-18',
-      queens: []
+      queens: [
+        {
+          name: '王氏',
+          posthumousName: '显恭皇后',
+          start: '1100',
+          end: '1108'
+        },
+        { name: '郑氏', posthumousName: '显肃皇后', start: '1111', end: '1131' }
+      ]
     },
     {
       name: '赵桓',
@@ -1986,7 +2214,9 @@ export const emperors = {
       era: ['靖康'],
       start: '1126-01-19',
       end: '1127-03-20',
-      queens: []
+      queens: [
+        { name: '朱氏', posthumousName: '仁怀皇后', start: '1126', end: '1127' }
+      ]
     }
   ],
   SouthernSong: [
@@ -1997,7 +2227,20 @@ export const emperors = {
       era: ['建炎', '绍兴'],
       start: '1127-06-12',
       end: '1162-07-24',
-      queens: []
+      queens: [
+        {
+          name: '邢氏',
+          posthumousName: '懿节皇后',
+          start: '1127',
+          end: '1139'
+        },
+        {
+          name: '吴氏',
+          posthumousName: '宪圣慈烈皇后',
+          start: '1143',
+          end: '1197'
+        }
+      ]
     },
     {
       name: '赵昚',
@@ -2006,7 +2249,15 @@ export const emperors = {
       era: ['隆兴', '乾道', '淳熙'],
       start: '1162-07-24',
       end: '1189-02-18',
-      queens: []
+      queens: [
+        {
+          name: '成氏',
+          posthumousName: '恭夏皇后',
+          start: '1162',
+          end: '1167'
+        },
+        { name: '谢氏', posthumousName: '成肃皇后', start: '1167', end: '1207' }
+      ]
     },
     {
       name: '赵惇',
@@ -2015,7 +2266,9 @@ export const emperors = {
       era: ['绍熙'],
       start: '1189-02-18',
       end: '1194-07-24',
-      queens: []
+      queens: [
+        { name: '李氏', posthumousName: '慈懿皇后', start: '1189', end: '1200' }
+      ]
     },
     {
       name: '赵扩',
@@ -2024,7 +2277,20 @@ export const emperors = {
       era: ['庆元', '嘉泰', '开禧', '嘉定'],
       start: '1194-07-24',
       end: '1224-09-17',
-      queens: []
+      queens: [
+        {
+          name: '韩氏',
+          posthumousName: '恭淑皇后',
+          start: '1194',
+          end: '1200'
+        },
+        {
+          name: '杨氏',
+          posthumousName: '恭圣仁烈皇后',
+          start: '1202',
+          end: '1232'
+        }
+      ]
     },
     {
       name: '赵昀',
@@ -2033,7 +2299,14 @@ export const emperors = {
       era: ['宝庆', '绍定', '端平', '嘉熙', '淳祐', '宝祐', '开庆', '景定'],
       start: '1224-09-17',
       end: '1264-11-16',
-      queens: []
+      queens: [
+        {
+          name: '谢道清',
+          posthumousName: '寿和圣福皇后',
+          start: '1227',
+          end: '1283'
+        }
+      ]
     },
     {
       name: '赵禥',
@@ -2042,7 +2315,9 @@ export const emperors = {
       era: ['咸淳'],
       start: '1264-11-16',
       end: '1274-08-12',
-      queens: []
+      queens: [
+        { name: '全氏', posthumousName: '全皇后', start: '1267', end: '1276' }
+      ]
     },
     {
       name: '赵显',
@@ -2194,8 +2469,8 @@ export const emperors = {
         {
           name: '马氏',
           posthumousName: '孝慈高皇后',
-          start: '1368',
-          end: '1382'
+          start: '1368-01-23',
+          end: '1382-09-17'
         }
       ]
     },
@@ -2219,8 +2494,8 @@ export const emperors = {
         {
           name: '徐氏',
           posthumousName: '仁孝文皇后',
-          start: '1402',
-          end: '1407'
+          start: '1402-12',
+          end: '1407-07'
         }
       ]
     },
@@ -2240,7 +2515,20 @@ export const emperors = {
       era: ['宣德'],
       start: '1425-06-27',
       end: '1435-01-31',
-      queens: []
+      queens: [
+        {
+          name: '胡善祥',
+          posthumousName: '恭让章皇后',
+          start: '1425-08',
+          end: '1428-03'
+        },
+        {
+          name: '孙氏',
+          posthumousName: '孝恭章皇后',
+          start: '1428-03',
+          end: '1462-09'
+        }
+      ]
     },
     {
       name: '朱祁镇',
@@ -2249,7 +2537,14 @@ export const emperors = {
       era: ['正统'],
       start: '1435-02-07',
       end: '1449-09-01',
-      queens: []
+      queens: [
+        {
+          name: '钱氏',
+          posthumousName: '孝庄睿皇后',
+          start: '1442-06',
+          end: '1468-07'
+        }
+      ]
     },
     {
       name: '朱祁钰',
@@ -2258,7 +2553,15 @@ export const emperors = {
       era: ['景泰'],
       start: '1449-09-22',
       end: '1457-02-11',
-      queens: []
+      queens: [
+        {
+          name: '汪氏',
+          posthumousName: '孝渊景皇后',
+          start: '1449',
+          end: '1452'
+        },
+        { name: '杭氏', posthumousName: '肃孝皇后', start: '1452', end: '1456' }
+      ]
     },
     {
       name: '朱祁镇',
@@ -2276,7 +2579,15 @@ export const emperors = {
       era: ['成化'],
       start: '1464-02-28',
       end: '1487-09-09',
-      queens: []
+      queens: [
+        { name: '吴氏', posthumousName: '', start: '1464', end: '1464' },
+        {
+          name: '王氏',
+          posthumousName: '孝贞纯皇后',
+          start: '1464',
+          end: '1518'
+        }
+      ]
     },
     {
       name: '朱祐樘',
@@ -2285,7 +2596,14 @@ export const emperors = {
       era: ['弘治'],
       start: '1487-09-22',
       end: '1505-06-08',
-      queens: []
+      queens: [
+        {
+          name: '张氏',
+          posthumousName: '孝成敬皇后',
+          start: '1487',
+          end: '1541'
+        }
+      ]
     },
     {
       name: '朱厚照',
@@ -2294,7 +2612,14 @@ export const emperors = {
       era: ['正德'],
       start: '1505-06-19',
       end: '1521-04-20',
-      queens: []
+      queens: [
+        {
+          name: '夏氏',
+          posthumousName: '孝静毅皇后',
+          start: '1506',
+          end: '1535'
+        }
+      ]
     },
     {
       name: '朱厚熜',
@@ -2303,7 +2628,16 @@ export const emperors = {
       era: ['嘉靖'],
       start: '1521-05-27',
       end: '1567-01-23',
-      queens: []
+      queens: [
+        {
+          name: '陈氏',
+          posthumousName: '孝洁肃皇后',
+          start: '1522',
+          end: '1528'
+        },
+        { name: '张氏', posthumousName: '', start: '1529', end: '1534' },
+        { name: '方氏', posthumousName: '孝烈皇后', start: '1534', end: '1547' }
+      ]
     },
     {
       name: '朱载坖',
@@ -2312,7 +2646,9 @@ export const emperors = {
       era: ['隆庆'],
       start: '1567-02-04',
       end: '1572-07-05',
-      queens: []
+      queens: [
+        { name: '陈氏', posthumousName: '孝安皇后', start: '1567', end: '1596' }
+      ]
     },
     {
       name: '朱翊钧',
@@ -2321,7 +2657,14 @@ export const emperors = {
       era: ['万历'],
       start: '1572-07-19',
       end: '1620-08-18',
-      queens: []
+      queens: [
+        {
+          name: '王喜姐',
+          posthumousName: '孝端显皇后',
+          start: '1578',
+          end: '1620'
+        }
+      ]
     },
     {
       name: '朱常洛',
@@ -2339,7 +2682,14 @@ export const emperors = {
       era: ['天启'],
       start: '1620-10-01',
       end: '1627-09-30',
-      queens: []
+      queens: [
+        {
+          name: '张嫣',
+          posthumousName: '孝哀悊皇后',
+          start: '1621',
+          end: '1644'
+        }
+      ]
     },
     {
       name: '朱由检',
@@ -2348,29 +2698,78 @@ export const emperors = {
       era: ['崇祯'],
       start: '1627-10-02',
       end: '1644-04-25',
+      queens: [
+        {
+          name: '周氏',
+          posthumousName: '孝节烈皇后',
+          start: '1628',
+          end: '1644'
+        }
+      ]
+    }
+  ],
+  HouJin: [
+    {
+      name: '努尔哈赤',
+      templeName: '‌清太祖',
+      posthumousName: '高皇帝',
+      era: [],
+      start: 1616,
+      end: 1626,
+      queens: []
+    },
+    {
+      name: '皇太极',
+      templeName: '清太宗',
+      posthumousName: '文皇帝',
+      era: ['天聪'],
+      start: 1626,
+      end: 1636,
       queens: []
     }
   ],
   Qing: [
     {
+      name: '皇太极',
+      templeName: '清太宗',
+      posthumousName: '文皇帝',
+      era: ['崇德'],
+      start: 1636,
+      end: '1643-08',
+      queens: [
+        {
+          name: '哲哲',
+          posthumousName: '孝端文皇后',
+          start: '1636-04',
+          end: '1649-04-17'
+        },
+        {
+          name: '布木布泰',
+          posthumousName: '庄妃（孝庄文皇后）',
+          start: '1636-04',
+          end: '1687-12-26'
+        }
+      ]
+    },
+    {
       name: '福临',
       templeName: '清世祖',
       posthumousName: '章皇帝',
       era: ['顺治'],
-      start: '1644-10-30',
+      start: '1643-08',
       end: '1661-02-05',
       queens: [
         {
           name: '博尔济吉特氏',
           posthumousName: '静妃',
-          start: '1651',
-          end: '1653'
+          start: '1651-09',
+          end: '1653-10'
         },
         {
           name: '博尔济吉特氏',
           posthumousName: '孝惠章皇后',
-          start: '1654',
-          end: '1718'
+          start: '1654-06',
+          end: '1718-01'
         }
       ]
     },
@@ -2385,20 +2784,20 @@ export const emperors = {
         {
           name: '赫舍里氏',
           posthumousName: '孝诚仁皇后',
-          start: '1665',
-          end: '1674'
+          start: '1665-10',
+          end: '1674-06'
         },
         {
           name: '钮祜禄氏',
           posthumousName: '孝昭仁皇后',
-          start: '1677',
-          end: '1678'
+          start: '1677-09',
+          end: '1678-03'
         },
         {
           name: '佟佳氏',
           posthumousName: '孝懿仁皇后',
-          start: '1689',
-          end: '1689'
+          start: '1689-08-23',
+          end: '1689-08-24'
         }
       ]
     },
@@ -2413,8 +2812,8 @@ export const emperors = {
         {
           name: '乌拉那拉氏',
           posthumousName: '孝敬宪皇后',
-          start: '1722',
-          end: '1731'
+          start: '1722-12',
+          end: '1731-10'
         }
       ]
     },
@@ -2429,15 +2828,14 @@ export const emperors = {
         {
           name: '富察氏',
           posthumousName: '孝贤纯皇后',
-          start: '1737',
-          end: '1748'
+          start: '1737-12-04',
+          end: '1748-04-08'
         },
-        { name: '那拉氏', posthumousName: '', start: '1750', end: '1766' },
         {
-          name: '魏佳氏',
-          posthumousName: '孝仪纯皇后',
-          start: '1796',
-          end: '1775'
+          name: '那拉氏',
+          posthumousName: '继皇后',
+          start: '1750-09-02',
+          end: '1766-08-19'
         }
       ]
     },
@@ -2446,9 +2844,22 @@ export const emperors = {
       templeName: '清仁宗',
       posthumousName: '睿皇帝',
       era: ['嘉庆'],
-      start: '1796-02-09',
+      start: '1796-02',
       end: '1820-09-02',
-      queens: []
+      queens: [
+        {
+          name: '喜塔腊氏',
+          posthumousName: '孝淑睿皇后',
+          start: '1796-02',
+          end: '1797-03'
+        },
+        {
+          name: '钮祜禄氏',
+          posthumousName: '孝和睿皇后',
+          start: '1801-05',
+          end: '1850-01'
+        }
+      ]
     },
     {
       name: '旻宁',
@@ -2457,7 +2868,20 @@ export const emperors = {
       era: ['道光'],
       start: '1820-10-03',
       end: '1850-02-25',
-      queens: []
+      queens: [
+        {
+          name: '钮祜禄氏',
+          posthumousName: '孝慎成皇后',
+          start: '1820-12',
+          end: '1833-06'
+        },
+        {
+          name: '钮祜禄氏',
+          posthumousName: '孝全成皇后',
+          start: '1834-11',
+          end: '1840-02'
+        }
+      ]
     },
     {
       name: '奕詝',
@@ -2466,7 +2890,14 @@ export const emperors = {
       era: ['咸丰'],
       start: '1850-03-09',
       end: '1861-08-22',
-      queens: []
+      queens: [
+        {
+          name: '钮祜禄氏',
+          posthumousName: '孝贞显皇后',
+          start: '1852-10',
+          end: '1881-04-08'
+        }
+      ]
     },
     {
       name: '载淳',
@@ -2475,7 +2906,14 @@ export const emperors = {
       era: ['同治'],
       start: '1861-11-11',
       end: '1875-01-12',
-      queens: []
+      queens: [
+        {
+          name: '阿鲁特氏',
+          posthumousName: '孝哲毅皇后',
+          start: '1872-10',
+          end: '1875-03'
+        }
+      ]
     },
     {
       name: '载湉',
@@ -2484,16 +2922,30 @@ export const emperors = {
       era: ['光绪'],
       start: '1875-02-25',
       end: '1908-11-14',
-      queens: []
+      queens: [
+        {
+          name: '叶赫那拉氏',
+          posthumousName: '孝定景皇后',
+          start: '1889-02-26',
+          end: '1913-02-22'
+        }
+      ]
     },
     {
       name: '溥仪',
-      templeName: '',
+      templeName: '清逊帝',
       posthumousName: '宣统帝',
       era: ['宣统'],
       start: '1908-12-02',
       end: '1912-02-12',
-      queens: []
+      queens: [
+        {
+          name: '郭布罗·婉容',
+          posthumousName: '孝恪愍皇后',
+          start: '1922-12-01',
+          end: '1946-06-20'
+        }
+      ]
     }
   ],
   Liao: [
@@ -2752,6 +3204,180 @@ export const emperors = {
       start: 1224,
       end: 1234,
       queens: []
+    }
+  ],
+  ROC: [
+    // 南京临时政府
+    {
+      name: '孙中山',
+      templeName: '南京临时政府-临时大总统',
+      posthumousName: '国父',
+      start: '1912-01-01',
+      end: '1912-04-01'
+    },
+    // 北洋政府
+    {
+      name: '袁世凯',
+      templeName: '北洋政府-正式总统',
+      posthumousName: '',
+      start: '1912-03-10',
+      end: '1916-06-06'
+    },
+    {
+      name: '黎元洪',
+      templeName: '北洋政府-第一任总统',
+      posthumousName: '',
+      start: '1916-06-07',
+      end: '1917-07-01'
+    },
+    {
+      name: '冯国璋',
+      templeName: '北洋政府-代理总统',
+      posthumousName: '',
+      start: '1917-07-06',
+      end: '1918-10-10'
+    },
+    {
+      name: '徐世昌',
+      templeName: '北洋政府-总统',
+      posthumousName: '',
+      start: '1918-10-10',
+      end: '1922-06-02'
+    },
+    {
+      name: '周自齐',
+      templeName: '北洋政府-国务总理摄行总统职权',
+      posthumousName: '',
+      start: '1922-06-02',
+      end: '1922-06-11'
+    },
+    {
+      name: '黎元洪',
+      templeName: '北洋政府-第二任总统',
+      posthumousName: '',
+      start: '1922-06-11',
+      end: '1923-06-13'
+    },
+    {
+      name: '高凌霨',
+      templeName: '北洋政府-国务总理摄行总统职权',
+      posthumousName: '',
+      start: '1923-06-14',
+      end: '1923-10-10'
+    },
+    {
+      name: '曹锟',
+      templeName: '北洋政府-总统',
+      posthumousName: '',
+      start: '1923-10-10',
+      end: '1924-11-02'
+    },
+    {
+      name: '黄郛',
+      templeName: '北洋政府-国务总理摄行总统职权',
+      posthumousName: '',
+      start: '1924-11-02',
+      end: '1924-11-23'
+    },
+    {
+      name: '段祺瑞',
+      templeName: '北洋政府-临时执政',
+      posthumousName: '',
+      start: '1924-11-24',
+      end: '1926-04-20'
+    },
+    {
+      name: '胡惟德/颜惠庆/杜钖圭/顾维钧',
+      templeName: '北洋政府-国务总理代行职权',
+      posthumousName: '',
+      start: '1926-04-20',
+      end: '1927-06-16'
+    },
+    {
+      name: '张作霖',
+      templeName: '北洋政府-陆海军大元帅',
+      posthumousName: '',
+      start: '1927-06-18',
+      end: '1928-06-03'
+    },
+    // 国民政府
+    {
+      name: '汪精卫',
+      templeName: '国民政府-国民政府主席',
+      posthumousName: '',
+      start: '1925-07-01',
+      end: '1926-03-20'
+    },
+    {
+      name: '谭延闿',
+      templeName: '国民政府-国民政府主席',
+      posthumousName: '',
+      start: '1926-03-20',
+      end: '1927-03-12'
+    },
+    {
+      name: '胡汉民',
+      templeName: '国民政府-国民政府主席',
+      posthumousName: '',
+      start: '1927-04-18',
+      end: '1927-09-13'
+    },
+    {
+      name: '集体执政',
+      templeName: '国民政府-胡汉民、谭延闿、孙科、徐谦、宋子文集体主持政务',
+      posthumousName: '',
+      start: '1927-07-15',
+      end: '1928-02-06'
+    },
+    {
+      name: '谭延闿',
+      templeName: '国民政府-国民政府主席',
+      posthumousName: '',
+      start: '1928-02-06',
+      end: '1928-10-10'
+    },
+    {
+      name: '蒋介石',
+      templeName: '国民政府-国民政府主席',
+      posthumousName: '',
+      start: '1928-10-10',
+      end: '1931-12-15'
+    },
+    {
+      name: '林森',
+      templeName: '国民政府-国民政府主席',
+      posthumousName: '',
+      start: '1931-12-15',
+      end: '1943-08-01'
+    },
+    {
+      name: '蒋介石',
+      templeName: '国民政府-军事委员会委员长',
+      posthumousName: '',
+      start: '1931-12-15',
+      end: '1943-08-01'
+    },
+    {
+      name: '蒋介石',
+      templeName: '国民政府-国民政府主席',
+      posthumousName: '',
+      start: '1943-08-01',
+      end: '1948-05-20'
+    },
+    // 行宪后
+    {
+      name: '蒋介石',
+      templeName: '国民政府-总统',
+      posthumousName: '',
+      start: '1948-05-20',
+      end: '1949-01-21'
+    },
+    {
+      name: '李宗仁',
+      templeName: '国民政府-代总统',
+      posthumousName: '',
+      start: '1949-01-21',
+      end: '1949-10-01'
     }
   ]
 }

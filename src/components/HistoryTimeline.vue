@@ -1,7 +1,7 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed } from 'vue'
 import EmperorTimeline from './EmperorTimeline.vue'
+import EventTimeline from './EventTimeline.vue'
 import {
   majorDynasties,
   detailedDynasties,
@@ -9,14 +9,16 @@ import {
 } from '../data/dynasties'
 import { emperors } from '../data/emperors'
 
-const router = useRouter()
 const selectedDynastyKey = ref(null)
+const activeTab = ref('rulers') // 'rulers' | 'events'
 const timelineContainer = ref(null)
 
 // 配置参数
 const PIXELS_PER_YEAR = 10 // 每年占用的像素高度
+const PIXELS_PER_DAY_ROC = 0.2 // 民国阶段每天占用的像素高度
+const ROC_START_YEAR = 1912 // 民国开始年份
+const ROC_END_YEAR = 1949 // 民国结束年份 (用于分段)
 const RULER_WIDTH = 80 // 时间轴标尺宽度（主轴在左侧）
-const COL_WIDTH = 30 // 每列朝代的宽度
 const MAJOR_COL_WIDTH = 50 // 正统朝代宽度
 const DETAILED_COL_WIDTH = 30 // 详细朝代宽度
 const OTHER_COL_WIDTH = 20 // 非正统朝代宽度
@@ -25,11 +27,32 @@ const START_PADDING = 50 // 起始留白
 const END_PADDING = 100 // 结束留白
 
 // 合并计算总的时间范围
-const allDynasties = [
+const rawAllDynasties = [
   ...majorDynasties,
   ...detailedDynasties,
   ...otherDynasties
 ]
+
+// 确保每个朝代都有 key，如果没有则使用 name
+const allDynasties = rawAllDynasties.map((d) => ({
+  ...d,
+  key: d.key || d.name
+}))
+
+// 辅助函数：解析年份（支持数字和字符串）
+const parseYear = (val) => {
+  if (typeof val === 'number') return val
+  if (typeof val === 'string') {
+    // 处理 '-202' 或 '1912-01-01' 或 '-202-02-01'
+    const parts = val.split('-')
+    // 如果第一部分是空字符串，说明是负数
+    if (parts[0] === '') {
+      return -parseInt(parts[1], 10)
+    }
+    return parseInt(parts[0], 10)
+  }
+  return 0
+}
 
 // 下拉框排序逻辑
 const sortedDynastiesForSelect = computed(() => {
@@ -122,10 +145,70 @@ const sortedDynastiesForSelect = computed(() => {
 
   return result
 })
-const minYear = Math.min(...allDynasties.map((d) => d.start)) - 10
-const maxYear = Math.max(...allDynasties.map((d) => d.end)) + 10
-const totalYears = maxYear - minYear
-const totalHeight = totalYears * PIXELS_PER_YEAR + START_PADDING + END_PADDING
+const minYear = Math.min(...allDynasties.map((d) => parseYear(d.start))) - 10
+const maxYear = Math.max(...allDynasties.map((d) => parseYear(d.end))) + 10
+
+// 计算 Y 坐标的辅助函数
+const getY = (yearOrDateStr) => {
+  // 解析输入，可能是数字年份，也可能是日期字符串
+  let year,
+    month = 0,
+    day = 0
+
+  if (typeof yearOrDateStr === 'string') {
+    // 处理字符串日期
+    const parts = yearOrDateStr.split('-')
+    // 检查是否为负数日期 (例如 "-202-02-28")
+    if (parts[0] === '') {
+      // 负数：parts[0]是空，parts[1]是年，parts[2]是月，parts[3]是日
+      year = -parseInt(parts[1], 10)
+      if (parts[2]) month = parseInt(parts[2], 10) - 1
+      if (parts[3]) day = parseInt(parts[3], 10)
+    } else {
+      // 正数：parts[0]是年，parts[1]是月，parts[2]是日
+      year = parseInt(parts[0], 10)
+      if (parts[1]) month = parseInt(parts[1], 10) - 1
+      if (parts[2]) day = parseInt(parts[2], 10)
+    }
+  } else {
+    year = yearOrDateStr
+  }
+
+  // 分段计算：
+  // 1. 民国之前 (minYear -> ROC_START_YEAR)
+  // 2. 民国时期 (ROC_START_YEAR -> ROC_END_YEAR)
+  // 3. 民国之后 (ROC_END_YEAR -> maxYear)
+
+  // 基础高度：民国之前的年份
+  const preRocYears = ROC_START_YEAR - minYear
+  const preRocHeight = preRocYears * PIXELS_PER_YEAR
+
+  if (year < ROC_START_YEAR) {
+    return (year - minYear) * PIXELS_PER_YEAR + START_PADDING
+  } else if (year <= ROC_END_YEAR) {
+    // 民国期间：按天计算
+    // 计算从 1912-01-01 到当前日期的总天数
+    // 简化：年差 * 365.25 + (当前月日相对于年初的天数)
+    const yearDiff = year - ROC_START_YEAR
+    const daysInCurrentYear = month * 30.4 + day // 估算
+    const totalDays = yearDiff * 365.25 + daysInCurrentYear
+
+    return preRocHeight + totalDays * PIXELS_PER_DAY_ROC + START_PADDING
+  } else {
+    // 民国之后
+    const rocDurationYears = ROC_END_YEAR - ROC_START_YEAR + 1 // 包含1949全年
+    const rocDurationDays = rocDurationYears * 365.25
+    const rocHeight = rocDurationDays * PIXELS_PER_DAY_ROC
+
+    const postRocYears = year - ROC_END_YEAR
+    return (
+      preRocHeight + rocHeight + postRocYears * PIXELS_PER_YEAR + START_PADDING
+    )
+  }
+}
+
+// 计算总高度
+const totalHeight = getY(maxYear) + END_PADDING
 
 const colors = [
   '#D32F2F', // Red 700
@@ -179,8 +262,12 @@ const calculateLayout = (
       dispersedCount++
     } else {
       // 默认贪心算法：优先填补空缺
+      // 必须将时间转换为统一的数值进行比较 (时间戳)
+      const currentStart = parseDate(d.start).getTime()
+      const currentEnd = parseDate(d.end).getTime()
+
       for (let i = 0; i < cols.length; i++) {
-        if (cols[i] <= d.start) {
+        if (cols[i] <= currentStart) {
           relativeCol = i
           break
         }
@@ -188,14 +275,17 @@ const calculateLayout = (
       if (relativeCol === -1) {
         relativeCol = cols.length
       }
-    }
 
-    // 更新该列的结束时间（对于 strict 模式，其实无所谓更新，因为反正不复用，除非取模复用）
-    // 如果取模复用，更新结束时间还是有意义的，万一绕回来时时间已经过了呢。
-    cols[relativeCol] = d.end
+      // 更新该列的结束时间
+      cols[relativeCol] = currentEnd
+    }
 
     // 绝对左偏移
     const left = startLeftOffset + relativeCol * (colWidth + COL_GAP)
+
+    // 计算位置和高度
+    const top = getY(d.start)
+    const bottom = getY(d.end)
 
     return {
       ...d,
@@ -203,8 +293,8 @@ const calculateLayout = (
       width: colWidth,
       color: colors[(index + colorOffset) % colors.length],
       left: left,
-      top: (d.start - minYear) * PIXELS_PER_YEAR + START_PADDING,
-      height: (d.end - d.start) * PIXELS_PER_YEAR
+      top: top,
+      height: bottom - top
     }
   })
 }
@@ -298,14 +388,43 @@ const ticks = computed(() => {
     const isCentury = year % 100 === 0
     const isDecade = year % 10 === 0
 
-    if (isCentury || isDecade || true) {
-      // 生成所有刻度
+    // 特殊处理民国期间 (1912-1949)
+    if (year >= ROC_START_YEAR && year <= ROC_END_YEAR) {
+      // 每年都显示刻度
       res.push({
         year,
-        isCentury,
-        isDecade,
-        top: (year - minYear) * PIXELS_PER_YEAR + START_PADDING
+        isCentury: false,
+        isDecade: true, // 在民国区域，每年都当作大刻度显示
+        top: getY(year),
+        label: `${year}`
       })
+
+      // 每月刻度 (1-11月)
+      // 注意：这里简单按月均分，或者精确计算？
+      // 为了保持视觉均匀，假设每个月大约30.4天
+      const yearTop = getY(year)
+      const nextYearTop = getY(year + 1)
+      const yearHeight = nextYearTop - yearTop
+
+      for (let m = 1; m <= 11; m++) {
+        res.push({
+          year,
+          month: m,
+          isMonth: true,
+          top: yearTop + (yearHeight * m) / 12
+        })
+      }
+    } else {
+      // 正常年份
+      if (isCentury || isDecade || true) {
+        res.push({
+          year,
+          isCentury,
+          isDecade,
+          top: getY(year),
+          label: formatYear(year)
+        })
+      }
     }
   }
   return res
@@ -326,14 +445,97 @@ const tooltip = ref({
   duration: ''
 })
 
+// 辅助函数：解析日期（支持数字年份和字符串日期）
+const parseDate = (val) => {
+  if (typeof val === 'number') {
+    const d = new Date(0)
+    d.setFullYear(val, 0, 1) // 默认为当年1月1日
+    d.setHours(0, 0, 0, 0)
+    return d
+  }
+  if (typeof val === 'string') {
+    const parts = val.split('-')
+    let y,
+      m = 0,
+      d = 1
+    // 检查是否为负数日期 (例如 "-202-02-28")
+    if (parts[0] === '') {
+      y = -parseInt(parts[1], 10)
+      if (parts[2]) m = parseInt(parts[2], 10) - 1
+      if (parts[3]) d = parseInt(parts[3], 10)
+    } else {
+      y = parseInt(parts[0], 10)
+      if (parts[1]) m = parseInt(parts[1], 10) - 1
+      if (parts[2]) d = parseInt(parts[2], 10)
+    }
+    const date = new Date(0)
+    date.setFullYear(y, m, d)
+    date.setHours(0, 0, 0, 0)
+    return date
+  }
+  return new Date()
+}
+
+// 计算历时显示
+const getDurationDisplay = (startDate, endDate) => {
+  let y = endDate.getFullYear() - startDate.getFullYear()
+  let m = endDate.getMonth() - startDate.getMonth()
+  let d = endDate.getDate() - startDate.getDate()
+
+  if (d < 0) {
+    m--
+    const prevMonthDate = new Date(endDate.getFullYear(), endDate.getMonth(), 0)
+    d += prevMonthDate.getDate()
+  }
+  if (m < 0) {
+    y--
+    m += 12
+  }
+
+  if (y > 0) {
+    return m > 0 ? `${y}年${m}个月` : `${y}年`
+  } else if (m > 0) {
+    return `${m}个月`
+  } else {
+    return `${d}天`
+  }
+}
+
 const showTooltip = (e, dynasty) => {
-  const duration = Math.abs(dynasty.end - dynasty.start)
+  const startDate = parseDate(dynasty.start)
+  const endDate = parseDate(dynasty.end)
+  const durationDisplay = getDurationDisplay(startDate, endDate)
+
+  // 辅助函数：解析年份（支持数字和字符串）
+  const parseYear = (val) => {
+    if (typeof val === 'number') return val
+    if (typeof val === 'string') {
+      const parts = val.split('-')
+      if (parts[0] === '') return -parseInt(parts[1], 10)
+      return parseInt(parts[0], 10)
+    }
+    return 0
+  }
+
+  const startStr =
+    typeof dynasty.start === 'string'
+      ? dynasty.start
+      : formatYear(dynasty.start)
+  const endStr =
+    typeof dynasty.end === 'string' ? dynasty.end : formatYear(dynasty.end)
+
+  // 检查开始时间是否为民国之后 (1912+)
+  // 注意：dynasty.start 可能是字符串 '1912-01-01' 或数字
+  const startYear = parseYear(dynasty.start)
+  const isModern = startYear >= 1912
+
   tooltip.value = {
     show: true,
     x: e.clientX + 15,
     y: e.clientY + 15,
-    name: `${dynasty.name} (历时${duration}年)`,
-    range: `${formatYear(dynasty.start)} - ${formatYear(dynasty.end)}`
+    name: dynasty.name,
+    range: `${startStr} - ${endStr}`,
+    duration: isModern ? `在职: ${durationDisplay}` : `历时: ${durationDisplay}`
   }
 }
 
@@ -360,14 +562,17 @@ const handleSelectChange = (event) => {
   const dynasty = allDynasties.find((d) => d.key === key)
   if (dynasty) {
     // 滚动到该朝代的起始位置
-    const top = (dynasty.start - minYear) * PIXELS_PER_YEAR + START_PADDING
+    // 需要使用 getY 来计算准确的滚动位置，支持年份和日期字符串
+    const top = getY(dynasty.start)
     if (timelineContainer.value) {
       timelineContainer.value.scrollTop = top - 100 // 留出一点余量
     }
 
-    // 如果有皇帝数据，则选中该朝代
+    // 如果有皇帝数据，则选中该朝代；否则不加载右侧
     if (dynasty.key && emperors[dynasty.key]) {
       selectedDynastyKey.value = dynasty.key
+    } else {
+      selectedDynastyKey.value = null // 没有数据则关闭右侧
     }
   }
 }
@@ -458,9 +663,10 @@ const handleSelectChange = (event) => {
               stroke="#333"
               stroke-width="2"
             />
-            <g v-for="tick in ticks" :key="'tick-' + tick.year">
+            <g v-for="(tick, idx) in ticks" :key="'tick-' + idx">
               <!-- 刻度线 -->
               <line
+                v-if="!tick.isMonth"
                 :x1="
                   RULER_WIDTH - (tick.isCentury ? 20 : tick.isDecade ? 12 : 6)
                 "
@@ -470,9 +676,23 @@ const handleSelectChange = (event) => {
                 stroke="#333"
                 :stroke-width="tick.isCentury ? 2 : 1"
               />
-              <!-- 文字 (只显示整10年) -->
+              <!-- 月刻度线 (短一点) -->
+              <line
+                v-else
+                :x1="RULER_WIDTH - 4"
+                :y1="tick.top"
+                :x2="RULER_WIDTH"
+                :y2="tick.top"
+                stroke="#999"
+                stroke-width="1"
+              />
+
+              <!-- 文字 (只显示整10年 或 民国每一年) -->
               <text
-                v-if="tick.isDecade"
+                v-if="
+                  !tick.isMonth &&
+                  (tick.isDecade || (tick.year >= 1912 && tick.year <= 1949))
+                "
                 :x="RULER_WIDTH - 25"
                 :y="tick.top"
                 dy="4"
@@ -481,7 +701,11 @@ const handleSelectChange = (event) => {
                 fill="#666"
                 :font-weight="tick.isCentury ? 'bold' : 'normal'"
               >
-                {{ formatYear(tick.year) }}
+                {{
+                  tick.year >= 1912 && tick.year <= 1949
+                    ? `${tick.year}年`
+                    : tick.label || formatYear(tick.year)
+                }}
               </text>
             </g>
           </g>
@@ -540,10 +764,39 @@ const handleSelectChange = (event) => {
       </div>
     </div>
 
-    <!-- 右侧皇帝时间线面板 -->
+    <!-- 右侧面板 -->
     <div class="side-panel" v-if="selectedDynastyKey">
       <div class="panel-close" @click="selectedDynastyKey = null">×</div>
-      <EmperorTimeline :dynastyKey="selectedDynastyKey" />
+
+      <!-- Tab 切换 -->
+      <div class="panel-tabs">
+        <div
+          class="tab-item"
+          :class="{ active: activeTab === 'rulers' }"
+          @click="activeTab = 'rulers'"
+        >
+          执政者
+        </div>
+        <div
+          class="tab-item"
+          :class="{ active: activeTab === 'events' }"
+          @click="activeTab = 'events'"
+        >
+          大事件
+        </div>
+      </div>
+
+      <!-- 内容区域 -->
+      <div class="panel-content">
+        <EmperorTimeline
+          v-if="activeTab === 'rulers'"
+          :dynastyKey="selectedDynastyKey"
+        />
+        <EventTimeline
+          v-if="activeTab === 'events'"
+          :dynastyKey="selectedDynastyKey"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -607,7 +860,7 @@ const handleSelectChange = (event) => {
   border-radius: 4px;
   font-size: 14px;
   outline: none;
-  width: 150px;
+  width: 200px;
 }
 
 .side-panel {
@@ -695,5 +948,51 @@ const handleSelectChange = (event) => {
 .tooltip-range {
   font-size: 12px;
   color: #ddd;
+}
+
+.panel-tabs {
+  display: flex;
+  border-bottom: 1px solid #eee;
+  padding: 0 40px 0 10px; /* 右侧留出关闭按钮的空间 */
+  background: #f9f9f9;
+  height: 40px;
+  align-items: center;
+}
+
+.tab-item {
+  padding: 0 20px;
+  height: 40px;
+  line-height: 40px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #666;
+  position: relative;
+  transition: all 0.3s;
+}
+
+.tab-item:hover {
+  color: #333;
+}
+
+.tab-item.active {
+  color: #1976d2;
+  font-weight: bold;
+}
+
+.tab-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: #1976d2;
+}
+
+.panel-content {
+  flex: 1;
+  overflow: hidden; /* 内容组件自己处理滚动 */
+  display: flex;
+  flex-direction: column;
 }
 </style>
