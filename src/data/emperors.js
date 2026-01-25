@@ -559,6 +559,332 @@ export const emperors = {
       queens: []
     }
   ],
+  QinGuo: [
+    {
+      name: '秦非子',
+      templeName: '',
+      posthumousName: '',
+      era: [],
+      start: -900,
+      end: -858,
+      queens: []
+    },
+    {
+      name: '秦侯',
+      templeName: '',
+      posthumousName: '',
+      era: [],
+      start: -857,
+      end: -848,
+      queens: []
+    },
+    {
+      name: '秦公伯',
+      templeName: '',
+      posthumousName: '',
+      era: [],
+      start: -847,
+      end: -845,
+      queens: []
+    },
+    {
+      name: '秦仲',
+      templeName: '',
+      posthumousName: '',
+      era: [],
+      start: -844,
+      end: -822,
+      queens: []
+    },
+    {
+      name: '秦庄公',
+      templeName: '',
+      posthumousName: '',
+      era: [],
+      start: -821,
+      end: -778,
+      queens: []
+    },
+    {
+      name: '秦襄公',
+      templeName: '',
+      posthumousName: '',
+      era: [],
+      start: -777,
+      end: -766,
+      queens: []
+    },
+    {
+      name: '秦文公',
+      templeName: '',
+      posthumousName: '',
+      era: [],
+      start: -765,
+      end: -716,
+      queens: []
+    },
+    {
+      name: '秦宪公',
+      templeName: '',
+      posthumousName: '宪',
+      era: [],
+      start: -715,
+      end: -704,
+      queens: []
+    },
+    {
+      name: '秦出子',
+      templeName: '',
+      posthumousName: '',
+      era: [],
+      start: -703,
+      end: -698,
+      queens: []
+    },
+    {
+      name: '秦武公',
+      templeName: '',
+      posthumousName: '武',
+      era: [],
+      start: -697,
+      end: -678,
+      queens: []
+    },
+    {
+      name: '秦德公',
+      templeName: '',
+      posthumousName: '德',
+      era: [],
+      start: -677,
+      end: -676,
+      queens: []
+    },
+    {
+      name: '秦宣公',
+      templeName: '',
+      posthumousName: '宣',
+      era: [],
+      start: -675,
+      end: -664,
+      queens: []
+    },
+    {
+      name: '秦成公',
+      templeName: '',
+      posthumousName: '成',
+      era: [],
+      start: -663,
+      end: -660,
+      queens: []
+    },
+    {
+      name: '秦穆公',
+      templeName: '',
+      posthumousName: '穆',
+      era: [],
+      start: -659,
+      end: -621,
+      queens: []
+    },
+    {
+      name: '秦康公',
+      templeName: '',
+      posthumousName: '康',
+      era: [],
+      start: -620,
+      end: -609,
+      queens: []
+    },
+    {
+      name: '秦共公',
+      templeName: '',
+      posthumousName: '共',
+      era: [],
+      start: -608,
+      end: -604,
+      queens: []
+    },
+    {
+      name: '秦桓公',
+      templeName: '',
+      posthumousName: '桓',
+      era: [],
+      start: -603,
+      end: -577,
+      queens: []
+    },
+    {
+      name: '秦景公',
+      templeName: '',
+      posthumousName: '景',
+      era: [],
+      start: -576,
+      end: -537,
+      queens: []
+    },
+    {
+      name: '秦哀公',
+      templeName: '',
+      posthumousName: '哀',
+      era: [],
+      start: -536,
+      end: -501,
+      queens: []
+    },
+    {
+      name: '秦惠公',
+      templeName: '',
+      posthumousName: '惠',
+      era: [],
+      start: -500,
+      end: -491,
+      queens: []
+    },
+    {
+      name: '秦悼公',
+      templeName: '',
+      posthumousName: '悼',
+      era: [],
+      start: -490,
+      end: -477,
+      queens: []
+    },
+    {
+      name: '秦厉共公',
+      templeName: '',
+      posthumousName: '厉共',
+      era: [],
+      start: -476,
+      end: -443,
+      queens: []
+    },
+    {
+      name: '秦躁公',
+      templeName: '',
+      posthumousName: '躁',
+      era: [],
+      start: -442,
+      end: -429,
+      queens: []
+    },
+    {
+      name: '秦怀公',
+      templeName: '',
+      posthumousName: '怀',
+      era: [],
+      start: -428,
+      end: -425,
+      queens: []
+    },
+    {
+      name: '秦灵公',
+      templeName: '',
+      posthumousName: '灵',
+      era: [],
+      start: -424,
+      end: -415,
+      queens: []
+    },
+    {
+      name: '秦简公',
+      templeName: '',
+      posthumousName: '简',
+      era: [],
+      start: -414,
+      end: -400,
+      queens: []
+    },
+    {
+      name: '秦惠公',
+      templeName: '',
+      posthumousName: '惠',
+      era: [],
+      start: -399,
+      end: -387,
+      queens: []
+    },
+    {
+      name: '秦出子',
+      templeName: '',
+      posthumousName: '',
+      era: [],
+      start: -386,
+      end: -385,
+      queens: []
+    },
+    {
+      name: '秦献公',
+      templeName: '',
+      posthumousName: '献',
+      era: [],
+      start: -384,
+      end: -362,
+      queens: []
+    },
+    {
+      name: '秦孝公',
+      templeName: '',
+      posthumousName: '孝',
+      era: [],
+      start: -361,
+      end: -338,
+      queens: []
+    },
+    {
+      name: '秦惠文王',
+      templeName: '',
+      posthumousName: '惠文',
+      era: [],
+      start: -337,
+      end: -311,
+      queens: []
+    },
+    {
+      name: '秦武王',
+      templeName: '',
+      posthumousName: '武',
+      era: [],
+      start: -310,
+      end: -307,
+      queens: []
+    },
+    {
+      name: '秦昭襄王',
+      templeName: '',
+      posthumousName: '昭襄',
+      era: [],
+      start: -306,
+      end: -251,
+      queens: []
+    },
+    {
+      name: '秦孝文王',
+      templeName: '',
+      posthumousName: '孝文',
+      era: [],
+      start: -250,
+      end: -250,
+      queens: []
+    },
+    {
+      name: '秦庄襄王',
+      templeName: '',
+      posthumousName: '庄襄',
+      era: [],
+      start: -249,
+      end: -247,
+      queens: []
+    },
+    {
+      name: '秦王政',
+      templeName: '',
+      posthumousName: '',
+      era: [],
+      start: -246,
+      end: -221,
+      queens: []
+    }
+  ],
   Qin: [
     {
       name: '嬴政',

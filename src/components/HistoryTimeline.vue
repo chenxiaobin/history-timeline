@@ -344,6 +344,76 @@ const processedDynasties = computed(() => {
   return [...majors, ...details, ...others]
 })
 
+// 计算灭亡/取代关系的连线
+const destroyedRelationships = computed(() => {
+  const relationships = []
+  // 遍历所有处理后的朝代数据
+  processedDynasties.value.forEach((source) => {
+    if (source.destroyed) {
+      // 标准化 destroyed 为数组，统一处理
+      const targets = Array.isArray(source.destroyed)
+        ? source.destroyed
+        : [source.destroyed]
+
+      targets.forEach((targetName) => {
+        // 查找目标朝代（通过 name 或 key 匹配）
+        const target = processedDynasties.value.find(
+          (d) => d.name === targetName || d.key === targetName
+        )
+
+        if (target) {
+          // 起点：源朝代底部中心
+          const startX = source.left + source.width / 2
+          const startY = source.top + source.height
+
+          // 终点：目标朝代顶部中心
+          const endX = target.left + target.width / 2
+
+          // 计算目标 Y 坐标：
+          // 1. 获取源朝代灭亡时间
+          const sourceEndTime = parseDate(source.end).getTime()
+          // 2. 获取目标朝代建立时间
+          const targetStartTime = parseDate(target.start).getTime()
+
+          // 3. 比较时间：如果灭亡时间早于建立时间（sourceEnd < targetStart），则指向 targetStart
+          //    否则（灭亡时间 >= 建立时间），指向灭亡时间（sourceEnd）
+          //    注意：getY 接受年份或日期字符串，这里我们用 source.end 或 target.start
+
+          let endY
+          if (sourceEndTime < targetStartTime) {
+            endY = target.top // 也就是 getY(target.start)
+          } else {
+            endY = getY(source.end)
+          }
+
+          // 计算贝塞尔曲线控制点
+          // 控制点垂直偏移量，根据垂直距离动态调整，但至少有一些偏移
+          const distY = Math.max(Math.abs(endY - startY), 50)
+          const controlY = distY * 0.5
+
+          const cp1x = startX
+          const cp1y = startY + controlY
+          const cp2x = endX
+          const cp2y = endY - controlY
+
+          const path = `M ${startX} ${startY} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${endX} ${endY}`
+
+          relationships.push({
+            id: `${source.name}-${target.name}`,
+            startX,
+            startY,
+            endX,
+            endY,
+            path,
+            color: '#555' // 连线颜色，可以使用固定深灰色
+          })
+        }
+      })
+    }
+  })
+  return relationships
+})
+
 // 计算总宽度
 const contentWidth =
   RULER_WIDTH +
@@ -613,6 +683,18 @@ const handleSelectChange = (event) => {
           :height="totalHeight"
           class="timeline-svg"
         >
+          <defs>
+            <marker
+              id="arrowhead"
+              markerWidth="10"
+              markerHeight="6"
+              refX="5"
+              refY="3"
+              orient="auto"
+            >
+              <polygon points="0 0, 6 3, 0 6" fill="#ff0000" />
+            </marker>
+          </defs>
           <!-- 分区背景底色 -->
           <g class="bg-zones">
             <rect
@@ -748,6 +830,23 @@ const handleSelectChange = (event) => {
               >
                 {{ dynasty.name }}
               </text>
+            </g>
+          </g>
+
+          <!-- 灭亡/取代关系连线 -->
+          <g class="relationships">
+            <g v-for="rel in destroyedRelationships" :key="rel.id">
+              <!-- 连线 -->
+              <path
+                :d="rel.path"
+                fill="none"
+                :stroke="rel.color"
+                stroke-width="1"
+                stroke-dasharray="4 2"
+                marker-end="url(#arrowhead)"
+              />
+              <!-- 起点圆点 -->
+              <circle :cx="rel.startX" :cy="rel.startY" r="3" fill="#000000" />
             </g>
           </g>
         </svg>
