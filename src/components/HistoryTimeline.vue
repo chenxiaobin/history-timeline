@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import EmperorTimeline from './EmperorTimeline.vue'
 import EventTimeline from './EventTimeline.vue'
 import {
@@ -12,6 +12,9 @@ import { emperors } from '../data/emperors'
 const selectedDynastyKey = ref(null)
 const activeTab = ref('rulers') // 'rulers' | 'events'
 const timelineContainer = ref(null)
+const emperorTimelineRef = ref(null)
+const eventTimelineRef = ref(null)
+const isSyncingLeft = ref(false)
 
 // 配置参数
 const PIXELS_PER_YEAR = 10 // 每年占用的像素高度
@@ -52,6 +55,53 @@ const parseYear = (val) => {
     return parseInt(parts[0], 10)
   }
   return 0
+}
+
+// 悬停虚线相关
+const hoverLine = ref({
+  show: false,
+  top: 0,
+  text: ''
+})
+
+const getTimeFromY = (y) => {
+  const effectiveY = y - START_PADDING
+  const preRocYears = ROC_START_YEAR - minYear
+  const preRocHeight = preRocYears * PIXELS_PER_YEAR
+
+  // 民国之前
+  if (effectiveY < preRocHeight) {
+    const year = minYear + effectiveY / PIXELS_PER_YEAR
+    // 使用 Math.round 而不是 Math.floor，以避免负数取整导致的“差一年”视觉偏差
+    // 例如 -2080.1 (前2081年初) 会被 round 为 -2080，符合用户指着“前2080”刻度线时的直觉
+    return {
+      year: Math.round(year),
+      label: formatYear(Math.round(year))
+    }
+  }
+
+  // 民国期间
+  const rocDurationYears = ROC_END_YEAR - ROC_START_YEAR + 1
+  const rocDurationDays = rocDurationYears * 365.25
+  const rocHeight = rocDurationDays * PIXELS_PER_DAY_ROC
+
+  if (effectiveY < preRocHeight + rocHeight) {
+    const daysFromRocStart = (effectiveY - preRocHeight) / PIXELS_PER_DAY_ROC
+    const date = new Date(ROC_START_YEAR, 0, 1)
+    date.setDate(date.getDate() + daysFromRocStart)
+    return {
+      year: date.getFullYear(),
+      label: `${date.getFullYear()}年${date.getMonth() + 1}月`
+    }
+  }
+
+  // 民国之后
+  const postRocY = effectiveY - preRocHeight - rocHeight
+  const year = ROC_END_YEAR + postRocY / PIXELS_PER_YEAR
+  return {
+    year: Math.round(year),
+    label: `${Math.round(year)}年`
+  }
 }
 
 // 下拉框排序逻辑
@@ -625,9 +675,11 @@ const moveTooltip = (e) => {
   tooltip.value.y = e.clientY + 15
 }
 
-const handleSelectChange = (event) => {
-  const key = event.target.value
-  if (!key) return
+const scrollToAndSelectDynasty = (key) => {
+  if (!key) {
+    selectedDynastyKey.value = null
+    return
+  }
 
   const dynasty = allDynasties.find((d) => d.key === key)
   if (dynasty) {
@@ -646,6 +698,61 @@ const handleSelectChange = (event) => {
     }
   }
 }
+
+const handleSelectChange = (event) => {
+  scrollToAndSelectDynasty(event.target.value)
+}
+
+// 悬停虚线相关
+// const hoverLine = ref({
+//   show: false,
+//   top: 0,
+//   text: ''
+// })
+
+// const getTimeFromY = (y) => {
+//   const effectiveY = y - START_PADDING
+//   const preRocYears = ROC_START_YEAR - minYear
+//   const preRocHeight = preRocYears * PIXELS_PER_YEAR
+//
+//   // 民国之前
+//   if (effectiveY < preRocHeight) {
+//     const year = minYear + effectiveY / PIXELS_PER_YEAR
+//     return {
+//       year: Math.floor(year),
+//       label: formatYear(Math.floor(year))
+//     }
+//   }
+//
+//   // 民国期间
+//   const rocDurationYears = ROC_END_YEAR - ROC_START_YEAR + 1
+//   const rocDurationDays = rocDurationYears * 365.25
+//   const rocHeight = rocDurationDays * PIXELS_PER_DAY_ROC
+//
+//   if (effectiveY < preRocHeight + rocHeight) {
+//     const daysFromRocStart = (effectiveY - preRocHeight) / PIXELS_PER_DAY_ROC
+//     const date = new Date(ROC_START_YEAR, 0, 1)
+//     date.setDate(date.getDate() + daysFromRocStart)
+//     return {
+//       year: date.getFullYear(),
+//       label: `${date.getFullYear()}年${date.getMonth() + 1}月`
+//     }
+//   }
+//
+//   // 民国之后
+//   const postRocY = effectiveY - preRocHeight - rocHeight
+//   const year = ROC_END_YEAR + postRocY / PIXELS_PER_YEAR
+//   return {
+//     year: Math.floor(year),
+//     label: `${Math.floor(year)}年`
+//   }
+// }
+
+onMounted(() => {
+  if (sortedDynastiesForSelect.value.length > 0) {
+    scrollToAndSelectDynasty(sortedDynastiesForSelect.value[0].key)
+  }
+})
 </script>
 
 <template>
@@ -657,7 +764,11 @@ const handleSelectChange = (event) => {
     >
       <div class="header">
         <h2>历朝时间纪年</h2>
-        <select @change="handleSelectChange" class="dynasty-select">
+        <select
+          :value="selectedDynastyKey || ''"
+          @change="handleSelectChange"
+          class="dynasty-select"
+        >
           <option value="">所有朝代</option>
           <option
             v-for="d in sortedDynastiesForSelect"
@@ -1054,7 +1165,7 @@ const handleSelectChange = (event) => {
   border-bottom: 1px solid #eee;
   padding: 0 40px 0 10px; /* 右侧留出关闭按钮的空间 */
   background: #f9f9f9;
-  height: 40px;
+  height: 50px;
   align-items: center;
 }
 

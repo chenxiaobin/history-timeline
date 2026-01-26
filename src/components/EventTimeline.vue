@@ -160,11 +160,6 @@ const moveTooltip = (e) => {
 
 <template>
   <div class="timeline-container">
-    <div class="header">
-      <h2 v-if="dynastyInfo">{{ dynastyInfo.name }} - 大事件时间线</h2>
-      <h2 v-else>未找到朝代信息</h2>
-    </div>
-
     <div class="timeline-scroll" v-if="dynastyInfo">
       <svg :width="contentWidth" :height="totalHeight" class="timeline-svg">
         <!-- 标尺线 -->
