@@ -2,10 +2,12 @@
 import { ref, computed, onMounted } from 'vue'
 import EmperorTimeline from './EmperorTimeline.vue'
 import EventTimeline from './EventTimeline.vue'
+import { useDynastyTimeline } from '../composables/useDynastyTimeline'
 import {
   majorDynasties,
   detailedDynasties,
-  otherDynasties
+  otherDynasties,
+  specialPeriods
 } from '../data/dynasties'
 import { emperors } from '../data/emperors'
 
@@ -15,19 +17,6 @@ const timelineContainer = ref(null)
 const emperorTimelineRef = ref(null)
 const eventTimelineRef = ref(null)
 const isSyncingLeft = ref(false)
-
-// 配置参数
-const PIXELS_PER_YEAR = 10 // 每年占用的像素高度
-const PIXELS_PER_DAY_ROC = 0.2 // 民国阶段每天占用的像素高度
-const ROC_START_YEAR = 1912 // 民国开始年份
-const ROC_END_YEAR = 1949 // 民国结束年份 (用于分段)
-const RULER_WIDTH = 80 // 时间轴标尺宽度（主轴在左侧）
-const MAJOR_COL_WIDTH = 50 // 正统朝代宽度
-const DETAILED_COL_WIDTH = 30 // 详细朝代宽度
-const OTHER_COL_WIDTH = 20 // 非正统朝代宽度
-const COL_GAP = 10 // 列间距
-const START_PADDING = 50 // 起始留白
-const END_PADDING = 100 // 结束留白
 
 // 合并计算总的时间范围
 const rawAllDynasties = [
@@ -42,20 +31,29 @@ const allDynasties = rawAllDynasties.map((d) => ({
   key: d.key || d.name
 }))
 
-// 辅助函数：解析年份（支持数字和字符串）
-const parseYear = (val) => {
-  if (typeof val === 'number') return val
-  if (typeof val === 'string') {
-    // 处理 '-202' 或 '1912-01-01' 或 '-202-02-01'
-    const parts = val.split('-')
-    // 如果第一部分是空字符串，说明是负数
-    if (parts[0] === '') {
-      return -parseInt(parts[1], 10)
-    }
-    return parseInt(parts[0], 10)
-  }
-  return 0
-}
+const allDynastiesRef = ref(allDynasties)
+
+// 使用 Composable
+const {
+  // PIXELS_PER_DAY, // 移除，不再提供单一比例
+  RULER_WIDTH,
+  START_PADDING,
+  END_PADDING,
+  parseDate,
+  formatDate,
+  minDate,
+  maxDate,
+  totalHeight,
+  ticks,
+  getTop,
+  getHeight // 新增：用于替代 PIXELS_PER_DAY 计算高度
+} = useDynastyTimeline(allDynastiesRef)
+
+// 配置参数
+const MAJOR_COL_WIDTH = 50 // 正统朝代宽度
+const DETAILED_COL_WIDTH = 30 // 详细朝代宽度
+const OTHER_COL_WIDTH = 20 // 非正统朝代宽度
+const COL_GAP = 10 // 列间距
 
 // 悬停虚线相关
 const hoverLine = ref({
@@ -63,46 +61,6 @@ const hoverLine = ref({
   top: 0,
   text: ''
 })
-
-const getTimeFromY = (y) => {
-  const effectiveY = y - START_PADDING
-  const preRocYears = ROC_START_YEAR - minYear
-  const preRocHeight = preRocYears * PIXELS_PER_YEAR
-
-  // 民国之前
-  if (effectiveY < preRocHeight) {
-    const year = minYear + effectiveY / PIXELS_PER_YEAR
-    // 使用 Math.round 而不是 Math.floor，以避免负数取整导致的“差一年”视觉偏差
-    // 例如 -2080.1 (前2081年初) 会被 round 为 -2080，符合用户指着“前2080”刻度线时的直觉
-    return {
-      year: Math.round(year),
-      label: formatYear(Math.round(year))
-    }
-  }
-
-  // 民国期间
-  const rocDurationYears = ROC_END_YEAR - ROC_START_YEAR + 1
-  const rocDurationDays = rocDurationYears * 365.25
-  const rocHeight = rocDurationDays * PIXELS_PER_DAY_ROC
-
-  if (effectiveY < preRocHeight + rocHeight) {
-    const daysFromRocStart = (effectiveY - preRocHeight) / PIXELS_PER_DAY_ROC
-    const date = new Date(ROC_START_YEAR, 0, 1)
-    date.setDate(date.getDate() + daysFromRocStart)
-    return {
-      year: date.getFullYear(),
-      label: `${date.getFullYear()}年${date.getMonth() + 1}月`
-    }
-  }
-
-  // 民国之后
-  const postRocY = effectiveY - preRocHeight - rocHeight
-  const year = ROC_END_YEAR + postRocY / PIXELS_PER_YEAR
-  return {
-    year: Math.round(year),
-    label: `${Math.round(year)}年`
-  }
-}
 
 // 下拉框排序逻辑
 const sortedDynastiesForSelect = computed(() => {
@@ -141,7 +99,7 @@ const sortedDynastiesForSelect = computed(() => {
 
   const mainList = allDynasties
     .filter((d) => !d.belongTo)
-    .sort((a, b) => a.start - b.start)
+    .sort((a, b) => parseDate(a.start) - parseDate(b.start))
   const childrenMap = new Map()
 
   // 预处理 belongTo 映射关系（解决别名问题）
@@ -167,17 +125,17 @@ const sortedDynastiesForSelect = computed(() => {
       // 分离五代和十国
       const fiveDynasties = list
         .filter((d) => d.belongTo === '五代')
-        .sort((a, b) => a.start - b.start)
+        .sort((a, b) => parseDate(a.start) - parseDate(b.start))
       const tenKingdoms = list
         .filter((d) => d.belongTo === '十国')
-        .sort((a, b) => a.start - b.start)
+        .sort((a, b) => parseDate(a.start) - parseDate(b.start))
 
       // 清空原数组并重新填充
       list.length = 0
       // 添加前缀逻辑由模板处理，这里只负责排序
       list.push(...fiveDynasties, ...tenKingdoms)
     } else {
-      list.sort((a, b) => a.start - b.start)
+      list.sort((a, b) => parseDate(a.start) - parseDate(b.start))
     }
   })
 
@@ -195,91 +153,9 @@ const sortedDynastiesForSelect = computed(() => {
 
   return result
 })
-const minYear = Math.min(...allDynasties.map((d) => parseYear(d.start))) - 10
-const maxYear = Math.max(...allDynasties.map((d) => parseYear(d.end))) + 10
-
-// 计算 Y 坐标的辅助函数
-const getY = (yearOrDateStr) => {
-  // 解析输入，可能是数字年份，也可能是日期字符串
-  let year,
-    month = 0,
-    day = 0
-
-  if (typeof yearOrDateStr === 'string') {
-    // 处理字符串日期
-    const parts = yearOrDateStr.split('-')
-    // 检查是否为负数日期 (例如 "-202-02-28")
-    if (parts[0] === '') {
-      // 负数：parts[0]是空，parts[1]是年，parts[2]是月，parts[3]是日
-      year = -parseInt(parts[1], 10)
-      if (parts[2]) month = parseInt(parts[2], 10) - 1
-      if (parts[3]) day = parseInt(parts[3], 10)
-    } else {
-      // 正数：parts[0]是年，parts[1]是月，parts[2]是日
-      year = parseInt(parts[0], 10)
-      if (parts[1]) month = parseInt(parts[1], 10) - 1
-      if (parts[2]) day = parseInt(parts[2], 10)
-    }
-  } else {
-    year = yearOrDateStr
-  }
-
-  // 分段计算：
-  // 1. 民国之前 (minYear -> ROC_START_YEAR)
-  // 2. 民国时期 (ROC_START_YEAR -> ROC_END_YEAR)
-  // 3. 民国之后 (ROC_END_YEAR -> maxYear)
-
-  // 基础高度：民国之前的年份
-  const preRocYears = ROC_START_YEAR - minYear
-  const preRocHeight = preRocYears * PIXELS_PER_YEAR
-
-  if (year < ROC_START_YEAR) {
-    return (year - minYear) * PIXELS_PER_YEAR + START_PADDING
-  } else if (year <= ROC_END_YEAR) {
-    // 民国期间：按天计算
-    // 计算从 1912-01-01 到当前日期的总天数
-    // 简化：年差 * 365.25 + (当前月日相对于年初的天数)
-    const yearDiff = year - ROC_START_YEAR
-    const daysInCurrentYear = month * 30.4 + day // 估算
-    const totalDays = yearDiff * 365.25 + daysInCurrentYear
-
-    return preRocHeight + totalDays * PIXELS_PER_DAY_ROC + START_PADDING
-  } else {
-    // 民国之后
-    const rocDurationYears = ROC_END_YEAR - ROC_START_YEAR + 1 // 包含1949全年
-    const rocDurationDays = rocDurationYears * 365.25
-    const rocHeight = rocDurationDays * PIXELS_PER_DAY_ROC
-
-    const postRocYears = year - ROC_END_YEAR
-    return (
-      preRocHeight + rocHeight + postRocYears * PIXELS_PER_YEAR + START_PADDING
-    )
-  }
-}
-
-// 计算总高度
-const totalHeight = getY(maxYear) + END_PADDING
 
 const colors = [
-  '#D32F2F', // Red 700
-  '#C2185B', // Pink 700
-  '#7B1FA2', // Purple 700
-  '#512DA8', // Deep Purple 700
-  '#303F9F', // Indigo 700
-  '#1976D2', // Blue 700
-  '#0288D1', // Light Blue 700
-  '#0097A7', // Cyan 700
-  '#00796B', // Teal 700
-  '#388E3C', // Green 700
-  '#689F38', // Light Green 700
-  '#AFB42B', // Lime 700
-  '#FBC02D', // Yellow 700
-  '#FFA000', // Amber 700
-  '#F57C00', // Orange 700
-  '#E64A19', // Deep Orange 700
-  '#5D4037', // Brown 700
-  '#616161', // Grey 700
-  '#455A64' // Blue Grey 700
+  // 暂时保留，以防未来需要，或删除
 ]
 
 // 通用布局函数：给定一组数据和起始列，返回带布局信息的数组
@@ -292,17 +168,22 @@ const calculateLayout = (
 ) => {
   const cols = [] // 存储该组每一列的结束时间
   let dispersedCount = 0 // 分散布局计数器，用于紧凑排列
-  return list.map((d, index) => {
+
+  // 预先对列表按时间排序，确保贪心算法正确处理连续性
+  const sortedList = [...list].sort(
+    (a, b) => parseDate(a.start) - parseDate(b.start)
+  )
+
+  const listWithRelativeCol = sortedList.map((d, index) => {
     let relativeCol = -1
 
     // 判断是否强制使用严格堆叠（针对十国、春秋五霸、战国七雄）
     // 如果 isStrictStacking 为 true，我们还需要进一步检查该朝代是否属于分散组
     // 用户需求：只有详细中归属字段是十国/春秋五霸/战国七雄的，不需要判断连续都按重叠处理（即强制换列）
     // 其他详细朝代（如东周细分、三国细分等）应还原成原来的逻辑（判断连续和重叠）
+    // 修改：用户反馈春秋没有重叠却另起一列，说明春秋五霸不应强制分散，应允许贪心复用
 
-    const isDispersedGroup = ['十国', '春秋五霸', '战国七雄'].includes(
-      d.belongTo
-    )
+    const isDispersedGroup = ['十国', '战国七雄'].includes(d.belongTo)
     const shouldForceNewCol = isStrictStacking && isDispersedGroup
 
     if (shouldForceNewCol) {
@@ -317,6 +198,9 @@ const calculateLayout = (
       const currentEnd = parseDate(d.end).getTime()
 
       for (let i = 0; i < cols.length; i++) {
+        // 修改重叠判定逻辑：
+        // 如果 cols[i] (前一个的结束时间) <= currentStart (当前的开始时间)，则不重叠，可以复用该列。
+        // 这满足“结束时间和下一个的开始时间相同的话，不算做重叠”的要求。
         if (cols[i] <= currentStart) {
           relativeCol = i
           break
@@ -330,21 +214,73 @@ const calculateLayout = (
       cols[relativeCol] = currentEnd
     }
 
+    return {
+      ...d,
+      relativeCol, // 暂存原始相对列，稍后反转
+      colWidth
+      // ...其他属性稍后计算
+    }
+  })
+
+  // 计算该组数据的最大列数
+  const maxRelativeCol = Math.max(
+    -1,
+    ...listWithRelativeCol.map((d) => d.relativeCol)
+  )
+  const totalCols = maxRelativeCol + 1
+
+  return listWithRelativeCol.map((d) => {
+    // 反转列索引：实现“默认先从最右端开始绘制”
+    // 原来的第 0 列（最优先）变成第 totalCols - 1 列（最右）
+    const reversedCol = totalCols - 1 - d.relativeCol
+
     // 绝对左偏移
-    const left = startLeftOffset + relativeCol * (colWidth + COL_GAP)
+    const left = startLeftOffset + reversedCol * (colWidth + COL_GAP)
 
     // 计算位置和高度
-    const top = getY(d.start)
-    const bottom = getY(d.end)
+    const top = getTop(d.start)
+    const bottom = getTop(d.end)
+    const height = Math.max(bottom - top, 2) // 最小高度2px
+
+    // 颜色逻辑：优先使用数据中配置的 color，否则使用默认浅蓝色 #E0F0FF
+    // 不再使用 colors 数组循环
+    const color = d.color || '#E0F0FF'
+
+    // 计算反色文字颜色
+    const getContrastColor = (hexColor) => {
+      // 移除 #
+      const hex = hexColor.replace('#', '')
+      // 解析 RGB
+      let r, g, b
+      if (hex.length === 3) {
+        r = parseInt(hex[0] + hex[0], 16)
+        g = parseInt(hex[1] + hex[1], 16)
+        b = parseInt(hex[2] + hex[2], 16)
+      } else if (hex.length === 6 || hex.length === 8) {
+        // 支持 6位 或 8位 (带alpha，忽略alpha)
+        r = parseInt(hex.substring(0, 2), 16)
+        g = parseInt(hex.substring(2, 4), 16)
+        b = parseInt(hex.substring(4, 6), 16)
+      } else {
+        return '#333' // 默认黑色
+      }
+
+      // 计算亮度 (YIQ公式)
+      const yiq = (r * 299 + g * 587 + b * 114) / 1000
+      return yiq >= 128 ? '#333' : '#fff' // 浅色背景用黑字，深色背景用白字
+    }
+
+    const textColor = getContrastColor(color)
 
     return {
       ...d,
-      colIndex: relativeCol, // 仅用于调试或计算最大宽度
+      colIndex: reversedCol, // 使用反转后的索引
       width: colWidth,
-      color: colors[(index + colorOffset) % colors.length],
+      color: color,
+      textColor: textColor,
       left: left,
       top: top,
-      height: bottom - top
+      height: height
     }
   })
 }
@@ -427,13 +363,13 @@ const destroyedRelationships = computed(() => {
 
           // 3. 比较时间：如果灭亡时间早于建立时间（sourceEnd < targetStart），则指向 targetStart
           //    否则（灭亡时间 >= 建立时间），指向灭亡时间（sourceEnd）
-          //    注意：getY 接受年份或日期字符串，这里我们用 source.end 或 target.start
+          //    注意：getTop 接受年份或日期字符串，这里我们用 source.end 或 target.start
 
           let endY
           if (sourceEndTime < targetStartTime) {
-            endY = target.top // 也就是 getY(target.start)
+            endY = target.top // 也就是 getTop(target.start)
           } else {
-            endY = getY(source.end)
+            endY = getTop(source.end)
           }
 
           // 计算贝塞尔曲线控制点
@@ -464,16 +400,135 @@ const destroyedRelationships = computed(() => {
   return relationships
 })
 
+// 预计算箭头布局信息，不依赖 contentWidth
+const specialPeriodLayouts = computed(() => {
+  // 箭头布局管理：计算每一列的占用情况
+  const arrowCols = [] // 存储每一列的结束位置
+
+  // 必须按时间排序，否则贪心算法在处理乱序数据时会产生不必要的换列
+  const sortedPeriods = [...specialPeriods].sort(
+    (a, b) => parseDate(a.start) - parseDate(b.start)
+  )
+
+  const layouts = sortedPeriods.map((p) => {
+    const top = getTop(p.start)
+    const bottom = getTop(p.end)
+    const height = bottom - top
+
+    // 格式化起止时间
+    const startDate = parseDate(p.start)
+    const endDate = parseDate(p.end)
+    const startYear = startDate.getFullYear()
+    const endYear = endDate.getFullYear()
+
+    const startStr = startYear < 0 ? `前${Math.abs(startYear)}` : `${startYear}`
+    const endStr = endYear < 0 ? `前${Math.abs(endYear)}` : `${endYear}`
+
+    // 计算箭头列索引
+    let arrowColIndex = 0
+    // 简单的贪心算法：找到第一个不冲突的列
+
+    for (let i = 0; i < arrowCols.length; i++) {
+      if (arrowCols[i] <= top + 1) {
+        // 稍微加一点容差 (1px)，允许紧密衔接
+        // 当前列的结束位置 <= 当前时期的开始位置，说明该列空闲
+        arrowColIndex = i
+        break
+      }
+    }
+
+    // 如果没有找到合适列 (arrowColIndex 保持为 0 但第0列其实被占用了，或者遍历完都没找到)
+    // 需要严谨判断：如果 arrowCols[arrowColIndex] > top，说明冲突，需要新开一列
+    if (arrowCols[arrowColIndex] > top + 1) {
+      arrowColIndex = arrowCols.length
+    }
+
+    // 更新该列的结束位置
+    arrowCols[arrowColIndex] = bottom
+
+    return {
+      ...p,
+      top,
+      height,
+      startStr,
+      endStr,
+      timeRange: `${startStr}年 - ${endStr}年`,
+      arrowColIndex // 0, 1, 2...
+    }
+  })
+
+  // 计算最大列数，用于反转索引
+  const maxCol = arrowCols.length
+
+  // 反转 arrowColIndex，实现“整体靠右”
+  // 原来的第0列（最左/最优先）变成 maxCol - 1 (最右)
+  return layouts.map((item) => ({
+    ...item,
+    // 如果 maxCol 是 1 (只有1列)，0 -> 0
+    // 如果 maxCol 是 2，0 -> 1, 1 -> 0
+    // 这样最优先填满的列（原本是0）会变成最右边的一列
+    arrowColIndex: Math.max(0, maxCol - 1 - item.arrowColIndex)
+  }))
+})
+
 // 计算总宽度
-const contentWidth =
-  RULER_WIDTH +
-  20 +
-  3 * (MAJOR_COL_WIDTH + COL_GAP) +
-  COL_GAP +
-  12 * (DETAILED_COL_WIDTH + COL_GAP) +
-  COL_GAP +
-  5 * (OTHER_COL_WIDTH + COL_GAP) +
-  50
+const contentWidth = computed(() => {
+  // 基础宽度：RULER + 正统 + 详细 + 非正统
+  const baseWidth =
+    RULER_WIDTH +
+    20 +
+    3 * (MAJOR_COL_WIDTH + COL_GAP) +
+    COL_GAP +
+    12 * (DETAILED_COL_WIDTH + COL_GAP) +
+    COL_GAP +
+    5 * (OTHER_COL_WIDTH + COL_GAP)
+
+  // 加上箭头所需的额外宽度
+  // 最大 arrowColIndex
+  let maxArrowCol = -1
+  specialPeriodLayouts.value.forEach((p) => {
+    if (p.arrowColIndex > maxArrowCol) {
+      maxArrowCol = p.arrowColIndex
+    }
+  })
+
+  // 箭头总占用宽度：(maxArrowCol + 1) * 12 + 10
+  const arrowsWidth = (maxArrowCol + 1) * 12 + 10
+
+  return baseWidth + arrowsWidth
+})
+
+const arrowBaseX = computed(() => {
+  return (
+    RULER_WIDTH +
+    20 +
+    3 * (MAJOR_COL_WIDTH + COL_GAP) +
+    COL_GAP +
+    12 * (DETAILED_COL_WIDTH + COL_GAP) +
+    COL_GAP +
+    5 * (OTHER_COL_WIDTH + COL_GAP)
+  )
+})
+
+const scrollTop = ref(0)
+const handleScroll = (e) => {
+  scrollTop.value = e.target.scrollTop
+}
+
+// 处理特殊时期数据 (最终渲染用)
+const processedSpecialPeriods = computed(() => {
+  return specialPeriodLayouts.value.map((layout) => {
+    // 这里的 contentWidth.value 已经可以安全访问了，因为它依赖于 specialPeriodLayouts (计算 maxArrowCol)，
+    // 而 specialPeriodLayouts 不依赖 contentWidth。
+    const width = Math.max(contentWidth.value, 600) - RULER_WIDTH
+
+    return {
+      ...layout,
+      left: RULER_WIDTH,
+      width
+    }
+  })
+})
 
 // 背景区块配置
 const bgZones = [
@@ -500,62 +555,6 @@ const bgZones = [
   } // 浅橙
 ]
 
-// 生成刻度数据
-const ticks = computed(() => {
-  const res = []
-
-  for (let year = minYear; year <= maxYear; year++) {
-    const isCentury = year % 100 === 0
-    const isDecade = year % 10 === 0
-
-    // 特殊处理民国期间 (1912-1949)
-    if (year >= ROC_START_YEAR && year <= ROC_END_YEAR) {
-      // 每年都显示刻度
-      res.push({
-        year,
-        isCentury: false,
-        isDecade: true, // 在民国区域，每年都当作大刻度显示
-        top: getY(year),
-        label: `${year}`
-      })
-
-      // 每月刻度 (1-11月)
-      // 注意：这里简单按月均分，或者精确计算？
-      // 为了保持视觉均匀，假设每个月大约30.4天
-      const yearTop = getY(year)
-      const nextYearTop = getY(year + 1)
-      const yearHeight = nextYearTop - yearTop
-
-      for (let m = 1; m <= 11; m++) {
-        res.push({
-          year,
-          month: m,
-          isMonth: true,
-          top: yearTop + (yearHeight * m) / 12
-        })
-      }
-    } else {
-      // 正常年份
-      if (isCentury || isDecade || true) {
-        res.push({
-          year,
-          isCentury,
-          isDecade,
-          top: getY(year),
-          label: formatYear(year)
-        })
-      }
-    }
-  }
-  return res
-})
-
-// 格式化年份显示
-const formatYear = (year) => {
-  if (year < 0) return `前${Math.abs(year)}年`
-  return `${year}年`
-}
-
 const tooltip = ref({
   show: false,
   x: 0,
@@ -564,37 +563,6 @@ const tooltip = ref({
   range: '',
   duration: ''
 })
-
-// 辅助函数：解析日期（支持数字年份和字符串日期）
-const parseDate = (val) => {
-  if (typeof val === 'number') {
-    const d = new Date(0)
-    d.setFullYear(val, 0, 1) // 默认为当年1月1日
-    d.setHours(0, 0, 0, 0)
-    return d
-  }
-  if (typeof val === 'string') {
-    const parts = val.split('-')
-    let y,
-      m = 0,
-      d = 1
-    // 检查是否为负数日期 (例如 "-202-02-28")
-    if (parts[0] === '') {
-      y = -parseInt(parts[1], 10)
-      if (parts[2]) m = parseInt(parts[2], 10) - 1
-      if (parts[3]) d = parseInt(parts[3], 10)
-    } else {
-      y = parseInt(parts[0], 10)
-      if (parts[1]) m = parseInt(parts[1], 10) - 1
-      if (parts[2]) d = parseInt(parts[2], 10)
-    }
-    const date = new Date(0)
-    date.setFullYear(y, m, d)
-    date.setHours(0, 0, 0, 0)
-    return date
-  }
-  return new Date()
-}
 
 // 计算历时显示
 const getDurationDisplay = (startDate, endDate) => {
@@ -626,36 +594,53 @@ const showTooltip = (e, dynasty) => {
   const endDate = parseDate(dynasty.end)
   const durationDisplay = getDurationDisplay(startDate, endDate)
 
-  // 辅助函数：解析年份（支持数字和字符串）
-  const parseYear = (val) => {
-    if (typeof val === 'number') return val
-    if (typeof val === 'string') {
-      const parts = val.split('-')
-      if (parts[0] === '') return -parseInt(parts[1], 10)
-      return parseInt(parts[0], 10)
+  // 辅助格式化函数
+  const formatTooltipDate = (date, originalInput) => {
+    // 如果原始输入是数字（仅年份），或者字符串不包含月日（如 "1912"）
+    // 则只显示年份
+    // 我们的 parseDate 会把数字解析为当年1月1日
+
+    const y = date.getFullYear()
+    const yearStr = y < 0 ? `前${Math.abs(y)}` : `${y}`
+    const yearDisplay = `${yearStr}年`
+
+    // 判断是否需要显示月日
+    // 如果原始输入是数字，肯定只显示年
+    if (typeof originalInput === 'number') {
+      return yearDisplay
     }
-    return 0
+
+    // 如果是字符串，检查是否包含 '-'，简单判断精度
+    // 比如 "1912-01-01" -> 包含
+    // "-221" -> 不包含
+    if (typeof originalInput === 'string' && originalInput.includes('-')) {
+      // 进一步检查是否真的有月日部分，有些可能是 "-221" 这种负数年份
+      // 正则检查 YYYY-MM-DD
+      if (/^\-?\d+-\d+-\d+$/.test(originalInput)) {
+        return formatDate(date) // 使用原来的全格式
+      }
+    }
+
+    return yearDisplay
   }
 
-  const startStr =
-    typeof dynasty.start === 'string'
-      ? dynasty.start
-      : formatYear(dynasty.start)
-  const endStr =
-    typeof dynasty.end === 'string' ? dynasty.end : formatYear(dynasty.end)
+  const startStr = formatTooltipDate(startDate, dynasty.start)
+  const endStr = formatTooltipDate(endDate, dynasty.end)
 
   // 检查开始时间是否为民国之后 (1912+)
-  // 注意：dynasty.start 可能是字符串 '1912-01-01' 或数字
-  const startYear = parseYear(dynasty.start)
+  const startYear = startDate.getFullYear()
   const isModern = startYear >= 1912
+  const durationText = isModern
+    ? `在职: ${durationDisplay}`
+    : `(历时${durationDisplay})`
 
   tooltip.value = {
     show: true,
     x: e.clientX + 15,
     y: e.clientY + 15,
-    name: dynasty.name,
+    name: `${dynasty.name} ${durationText}`,
     range: `${startStr} - ${endStr}`,
-    duration: isModern ? `在职: ${durationDisplay}` : `历时: ${durationDisplay}`
+    duration: '' // 不再单独显示 duration 行，如果需要可以移除该字段或留空
   }
 }
 
@@ -684,8 +669,7 @@ const scrollToAndSelectDynasty = (key) => {
   const dynasty = allDynasties.find((d) => d.key === key)
   if (dynasty) {
     // 滚动到该朝代的起始位置
-    // 需要使用 getY 来计算准确的滚动位置，支持年份和日期字符串
-    const top = getY(dynasty.start)
+    const top = getTop(dynasty.start)
     if (timelineContainer.value) {
       timelineContainer.value.scrollTop = top - 100 // 留出一点余量
     }
@@ -702,51 +686,6 @@ const scrollToAndSelectDynasty = (key) => {
 const handleSelectChange = (event) => {
   scrollToAndSelectDynasty(event.target.value)
 }
-
-// 悬停虚线相关
-// const hoverLine = ref({
-//   show: false,
-//   top: 0,
-//   text: ''
-// })
-
-// const getTimeFromY = (y) => {
-//   const effectiveY = y - START_PADDING
-//   const preRocYears = ROC_START_YEAR - minYear
-//   const preRocHeight = preRocYears * PIXELS_PER_YEAR
-//
-//   // 民国之前
-//   if (effectiveY < preRocHeight) {
-//     const year = minYear + effectiveY / PIXELS_PER_YEAR
-//     return {
-//       year: Math.floor(year),
-//       label: formatYear(Math.floor(year))
-//     }
-//   }
-//
-//   // 民国期间
-//   const rocDurationYears = ROC_END_YEAR - ROC_START_YEAR + 1
-//   const rocDurationDays = rocDurationYears * 365.25
-//   const rocHeight = rocDurationDays * PIXELS_PER_DAY_ROC
-//
-//   if (effectiveY < preRocHeight + rocHeight) {
-//     const daysFromRocStart = (effectiveY - preRocHeight) / PIXELS_PER_DAY_ROC
-//     const date = new Date(ROC_START_YEAR, 0, 1)
-//     date.setDate(date.getDate() + daysFromRocStart)
-//     return {
-//       year: date.getFullYear(),
-//       label: `${date.getFullYear()}年${date.getMonth() + 1}月`
-//     }
-//   }
-//
-//   // 民国之后
-//   const postRocY = effectiveY - preRocHeight - rocHeight
-//   const year = ROC_END_YEAR + postRocY / PIXELS_PER_YEAR
-//   return {
-//     year: Math.floor(year),
-//     label: `${Math.floor(year)}年`
-//   }
-// }
 
 onMounted(() => {
   if (sortedDynastiesForSelect.value.length > 0) {
@@ -788,12 +727,35 @@ onMounted(() => {
         </select>
       </div>
 
-      <div class="timeline-scroll-area" ref="timelineContainer">
-        <svg
-          :width="Math.max(contentWidth, 600)"
-          :height="totalHeight"
-          class="timeline-svg"
+      <div
+        class="timeline-scroll-area"
+        ref="timelineContainer"
+        @scroll="handleScroll"
+      >
+        <!-- 特殊时期文字层 (HTML + Sticky) -->
+        <div
+          class="special-periods-layer"
+          :style="{ height: totalHeight + 'px' }"
         >
+          <div
+            v-for="period in processedSpecialPeriods"
+            :key="period.name"
+            class="special-period-item"
+            :style="{
+              top: period.top + 'px',
+              left: period.left + 'px',
+              width: period.width + 'px',
+              height: period.height + 'px'
+            }"
+          >
+            <div class="period-name-sticky">
+              <div class="period-title">{{ period.name }}</div>
+              <div class="period-time">{{ period.timeRange }}</div>
+            </div>
+          </div>
+        </div>
+
+        <svg :width="contentWidth" :height="totalHeight" class="timeline-svg">
           <defs>
             <marker
               id="arrowhead"
@@ -808,15 +770,17 @@ onMounted(() => {
           </defs>
           <!-- 分区背景底色 -->
           <g class="bg-zones">
-            <rect
-              v-for="(zone, index) in bgZones"
-              :key="'zone-' + index"
-              :x="zone.left"
-              y="0"
-              :width="zone.width"
-              :height="totalHeight"
-              :fill="zone.color"
-            />
+            <!-- 特殊时期色块 (最底层) -->
+            <g v-for="period in processedSpecialPeriods" :key="period.name">
+              <rect
+                :x="period.left"
+                :y="period.top"
+                :width="period.width"
+                :height="period.height"
+                :fill="period.color"
+                style="pointer-events: none"
+              />
+            </g>
             <!-- 垂直分隔线 -->
             <line
               v-for="(zone, index) in bgZones.slice(0, bgZones.length - 1)"
@@ -826,7 +790,7 @@ onMounted(() => {
               :x2="zone.left + zone.width"
               :y2="totalHeight"
               stroke="#ccc"
-              stroke-width="2"
+              stroke-width="1"
               stroke-dasharray="5 5"
             />
           </g>
@@ -834,14 +798,15 @@ onMounted(() => {
           <!-- 背景虚线 (基于十年刻度) -->
           <g class="grid-lines">
             <line
-              v-for="tick in ticks.filter((t) => t.isDecade)"
+              v-for="tick in ticks.filter((t) => t.isLarge)"
               :key="'grid-' + tick.year"
               :x1="RULER_WIDTH"
               :y1="tick.top"
-              :x2="Math.max(contentWidth, 600)"
+              :x2="contentWidth"
               :y2="tick.top"
+              stroke-dasharray="5 5"
               class="grid-line"
-              :class="{ 'grid-line-century': tick.isCentury }"
+              :class="{ 'grid-line-century': tick.year % 100 === 0 }"
             />
           </g>
 
@@ -857,49 +822,76 @@ onMounted(() => {
               stroke-width="2"
             />
             <g v-for="(tick, idx) in ticks" :key="'tick-' + idx">
-              <!-- 刻度线 -->
-              <line
-                v-if="!tick.isMonth"
-                :x1="
-                  RULER_WIDTH - (tick.isCentury ? 20 : tick.isDecade ? 12 : 6)
-                "
-                :y1="tick.top"
-                :x2="RULER_WIDTH"
-                :y2="tick.top"
-                stroke="#333"
-                :stroke-width="tick.isCentury ? 2 : 1"
-              />
-              <!-- 月刻度线 (短一点) -->
-              <line
-                v-else
-                :x1="RULER_WIDTH - 4"
-                :y1="tick.top"
-                :x2="RULER_WIDTH"
-                :y2="tick.top"
-                stroke="#999"
-                stroke-width="1"
-              />
+              <!-- 大刻度 (10年) -->
+              <template v-if="tick.isLarge && tick.config.length > 0">
+                <line
+                  :x1="RULER_WIDTH - tick.config.length"
+                  :y1="tick.top"
+                  :x2="RULER_WIDTH"
+                  :y2="tick.top"
+                  stroke="#333"
+                  :stroke-width="tick.config.width"
+                />
+                <text
+                  v-if="tick.showLabel"
+                  :x="RULER_WIDTH - tick.config.length - 5"
+                  :y="tick.top"
+                  dy="5"
+                  text-anchor="end"
+                  font-size="14"
+                  fill="#333"
+                  :font-weight="tick.year % 100 === 0 ? 'bold' : 'normal'"
+                >
+                  {{ tick.fullLabel }}
+                </text>
+              </template>
 
-              <!-- 文字 (只显示整10年 或 民国每一年) -->
-              <text
-                v-if="
-                  !tick.isMonth &&
-                  (tick.isDecade || (tick.year >= 1912 && tick.year <= 1949))
-                "
-                :x="RULER_WIDTH - 25"
-                :y="tick.top"
-                dy="4"
-                text-anchor="end"
-                font-size="12"
-                fill="#666"
-                :font-weight="tick.isCentury ? 'bold' : 'normal'"
-              >
-                {{
-                  tick.year >= 1912 && tick.year <= 1949
-                    ? `${tick.year}年`
-                    : tick.label || formatYear(tick.year)
-                }}
-              </text>
+              <!-- 中刻度 (5年) -->
+              <template v-else-if="tick.isMedium && tick.config.length > 0">
+                <line
+                  :x1="RULER_WIDTH - tick.config.length"
+                  :y1="tick.top"
+                  :x2="RULER_WIDTH"
+                  :y2="tick.top"
+                  stroke="#444"
+                  :stroke-width="tick.config.width"
+                />
+                <text
+                  v-if="tick.showLabel"
+                  :x="RULER_WIDTH - tick.config.length - 5"
+                  :y="tick.top"
+                  dy="4"
+                  text-anchor="end"
+                  font-size="10"
+                  fill="#555"
+                >
+                  {{ tick.label }}
+                </text>
+              </template>
+
+              <!-- 小刻度 (1年) -->
+              <template v-else-if="tick.isSmall && tick.config.length > 0">
+                <line
+                  :x1="RULER_WIDTH - tick.config.length"
+                  :y1="tick.top"
+                  :x2="RULER_WIDTH"
+                  :y2="tick.top"
+                  stroke="#666"
+                  :stroke-width="tick.config.width"
+                />
+              </template>
+
+              <!-- 微刻度 (1月) -->
+              <template v-else-if="tick.isMicro && tick.config.length > 0">
+                <line
+                  :x1="RULER_WIDTH - tick.config.length"
+                  :y1="tick.top"
+                  :x2="RULER_WIDTH"
+                  :y2="tick.top"
+                  stroke="#888"
+                  :stroke-width="tick.config.width"
+                />
+              </template>
             </g>
           </g>
 
@@ -934,7 +926,7 @@ onMounted(() => {
                 :y="dynasty.height / 2"
                 dy="4"
                 text-anchor="middle"
-                fill="white"
+                :fill="dynasty.textColor"
                 font-size="14"
                 font-weight="bold"
                 style="writing-mode: vertical-rl; text-orientation: upright"
@@ -960,6 +952,92 @@ onMounted(() => {
               <circle :cx="rel.startX" :cy="rel.startY" r="3" fill="#000000" />
             </g>
           </g>
+
+          <!-- 特殊时期侧边箭头标注 (SVG 内部，跟随横向滚动) -->
+          <g class="special-arrows">
+            <defs>
+              <marker
+                id="arrow-start"
+                markerWidth="10"
+                markerHeight="6"
+                refX="4"
+                refY="3"
+                orient="auto"
+              >
+                <!-- 修改 refX=4 使尖端 (4,3) 对准起点 -->
+                <polygon points="10 0, 4 3, 10 6" fill="#999" />
+              </marker>
+              <marker
+                id="arrow-end"
+                markerWidth="10"
+                markerHeight="6"
+                refX="6"
+                refY="3"
+                orient="auto"
+              >
+                <!-- 修改 refX=6 使尖端 (6,3) 对准终点 -->
+                <polygon points="0 0, 6 3, 0 6" fill="#999" />
+              </marker>
+            </defs>
+
+            <g
+              v-for="period in specialPeriodLayouts"
+              :key="period.name + '-arrow'"
+            >
+              <!-- 计算 X 坐标：紧贴内容右侧 -->
+              <g
+                :transform="`translate(${arrowBaseX + 10 + period.arrowColIndex * 15}, 0)`"
+              >
+                <!-- 上短横线 -->
+                <line
+                  x1="-5"
+                  :y1="period.top"
+                  x2="5"
+                  :y2="period.top"
+                  stroke="#999"
+                  stroke-width="1"
+                />
+
+                <!-- 下短横线 -->
+                <line
+                  x1="-5"
+                  :y1="period.top + period.height"
+                  x2="5"
+                  :y2="period.top + period.height"
+                  stroke="#999"
+                  stroke-width="1"
+                />
+
+                <!-- 中间双向箭头竖线 -->
+                <!-- 调整 y1 和 y2，让竖线稍微缩进一点，给箭头留出空间，或者直接连接 -->
+                <!-- 如果箭头看起来离线太远，是因为 marker 的 refX 设置问题。-->
+                <!-- 原来 refX=0 (start) 和 refX=10 (end)，这意味着箭头尖端正好在端点。-->
+                <!-- 如果用户觉得“不够接近”，可能是视觉上的。-->
+                <!-- 我们尝试把 refX 调整为 5，让箭头中心对准端点，或者微调。-->
+                <!-- 这里我们直接调整竖线的长度，让它稍微延伸出一点点，或者缩短一点点。-->
+                <!-- 实际上，如果箭头尖端在横线上，就是最接近的。-->
+                <!-- 用户说“两头的箭头不够接近横线”，意思是箭头和横线之间有空隙？-->
+                <!-- 可能是 marker 的定义导致。refX 是 marker 坐标系中与宿主坐标系重合的点。-->
+                <!-- 对于 arrow-start (上箭头)，尖端在 (5, 0)？不，points="10 0, 4 3, 10 6"。尖端在 (4,3)。-->
+                <!-- 如果 refX=0，那么 (0,3) 对准线端。尖端 (4,3) 离线端有 4px 距离。-->
+                <!-- 所以 arrow-start 应该把 refX 设为 4 左右。-->
+                <!-- 对于 arrow-end (下箭头)，points="0 0, 6 3, 0 6"。尖端在 (6,3)。-->
+                <!-- 如果 refX=10，那么 (10,3) 对准线端。尖端 (6,3) 离线端有 4px 距离。-->
+                <!-- 所以 arrow-end 应该把 refX 设为 6 左右。-->
+
+                <line
+                  x1="0"
+                  :y1="period.top"
+                  x2="0"
+                  :y2="period.top + period.height"
+                  stroke="#999"
+                  stroke-width="1"
+                  marker-start="url(#arrow-start)"
+                  marker-end="url(#arrow-end)"
+                />
+              </g>
+            </g>
+          </g>
         </svg>
         <!-- 自定义 Tooltip -->
         <div
@@ -969,9 +1047,11 @@ onMounted(() => {
         >
           <div class="tooltip-name">{{ tooltip.name }}</div>
           <div class="tooltip-range">{{ tooltip.range }}</div>
-          <div class="tooltip-duration">{{ tooltip.duration }}</div>
         </div>
       </div>
+
+      <!-- 悬浮箭头层 (固定在视口右侧，跟随垂直滚动) -->
+      <!-- <div class="arrow-overlay-container"> ... </div> -->
     </div>
 
     <!-- 右侧面板 -->
@@ -1016,7 +1096,7 @@ onMounted(() => {
   width: 100%;
   height: 100vh;
   overflow: hidden;
-  background: #f5f5f5;
+  background: white;
   display: flex;
   flex-direction: row;
 }
@@ -1044,6 +1124,7 @@ onMounted(() => {
 }
 
 /* 移除原来的 shrink-0 样式，因为现在是在外层容器上控制 */
+/* 移除 arrow-overlay-container 相关样式 */
 
 .header {
   padding: 10px 10px;
@@ -1108,6 +1189,8 @@ onMounted(() => {
 
 .timeline-svg {
   display: block;
+  position: relative;
+  z-index: 2;
 }
 
 .grid-line {
@@ -1204,5 +1287,44 @@ onMounted(() => {
   overflow: hidden; /* 内容组件自己处理滚动 */
   display: flex;
   flex-direction: column;
+}
+
+.special-periods-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  pointer-events: none;
+  z-index: 1; /* 确保在 SVG 内容之下 (SVG z-index: 2) */
+}
+
+.special-period-item {
+  position: absolute;
+  display: flex;
+  justify-content: flex-end; /* 内容靠右 */
+}
+
+.period-name-sticky {
+  position: sticky;
+  top: 20px; /* 吸顶距离 */
+  margin-right: 20px; /* 右边距 */
+  text-align: right;
+  height: fit-content;
+}
+
+.period-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+  opacity: 0.5;
+  white-space: nowrap;
+}
+
+.period-time {
+  font-size: 12px;
+  color: #333;
+  opacity: 0.5;
+  white-space: nowrap;
+  margin-top: 4px;
 }
 </style>

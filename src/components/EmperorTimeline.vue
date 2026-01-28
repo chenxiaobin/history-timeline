@@ -28,14 +28,16 @@ const emperorList = computed(() =>
 
 // 使用 Composable 提取公共逻辑
 const {
-  PIXELS_PER_DAY,
+  // PIXELS_PER_DAY, // 移除
   RULER_WIDTH,
   START_PADDING,
   parseDate,
   formatDate,
   minDate,
   totalHeight,
-  ticks
+  ticks,
+  getTop, // 确保解构出 getTop
+  getHeight // 新增
 } = useDynastyTimeline(emperorList, dynastyInfo)
 
 // 配置参数
@@ -75,9 +77,13 @@ const calculateLayout = (items, colWidth, startOffset, colorOffset = 0) => {
   return items.map((item, index) => {
     const startDate = parseDate(item.start)
     const endDate = parseDate(item.end)
-    const startDays = (startDate - minDate.value) / (1000 * 60 * 60 * 24)
-    const endDays = (endDate - minDate.value) / (1000 * 60 * 60 * 24)
-    const durationDays = endDays - startDays
+    // const startDays = (startDate - minDate.value) / (1000 * 60 * 60 * 24)
+    // const endDays = (endDate - minDate.value) / (1000 * 60 * 60 * 24)
+    // const durationDays = endDays - startDays
+
+    // 使用新的 getTop 和 getHeight
+    const top = getTop(startDate)
+    const height = Math.max(getHeight(startDate, endDate), 20) // 最小高度20px
 
     // 计算精确的在位时间显示
     let y = endDate.getFullYear() - startDate.getFullYear()
@@ -128,11 +134,12 @@ const calculateLayout = (items, colWidth, startOffset, colorOffset = 0) => {
         const col3End = cols[3] !== undefined ? cols[3] : -Infinity
 
         // 优先尝试第3列 (index 2)
-        if (startDays >= col2End - EPSILON) {
+        if (top >= col2End - EPSILON) {
+          // 使用 top 比较
           colIndex = 2
         }
         // 如果冲突，尝试第4列 (index 3)
-        else if (startDays >= col3End - EPSILON) {
+        else if (top >= col3End - EPSILON) {
           colIndex = 3
         }
         // 如果都冲突，强制放入第4列（或根据需要放入更后面的列，但目前只有4列）
@@ -147,7 +154,8 @@ const calculateLayout = (items, colWidth, startOffset, colorOffset = 0) => {
     } else {
       // 传统朝代：贪心算法
       for (let i = 0; i < cols.length; i++) {
-        if (cols[i] <= startDays) {
+        if (cols[i] <= top) {
+          // 使用 top 比较
           colIndex = i
           break
         }
@@ -161,7 +169,7 @@ const calculateLayout = (items, colWidth, startOffset, colorOffset = 0) => {
     if (colIndex !== -1) {
       const currentEnd =
         cols[colIndex] !== undefined ? cols[colIndex] : -Infinity
-      cols[colIndex] = Math.max(currentEnd, endDays)
+      cols[colIndex] = Math.max(currentEnd, top + height) // 更新为结束的 Y 坐标
     }
 
     return {
@@ -169,8 +177,8 @@ const calculateLayout = (items, colWidth, startOffset, colorOffset = 0) => {
       colIndex,
       color: colors[(index + colorOffset) % colors.length],
       left: startOffset + colIndex * (colWidth + COL_GAP),
-      top: startDays * PIXELS_PER_DAY + START_PADDING,
-      height: Math.max(durationDays * PIXELS_PER_DAY, 20), // 最小高度20px
+      top: top, // 使用计算好的 top
+      height: height, // 使用计算好的 height
       durationDisplay,
       startDateStr: formatDate(startDate),
       endDateStr: formatDate(endDate)
@@ -337,36 +345,65 @@ const hideTooltip = () => {
 
         <!-- 刻度 -->
         <g v-for="(tick, idx) in ticks" :key="idx">
-          <!-- 年刻度 -->
-          <template v-if="tick.type === 'year'">
+          <template v-if="tick.isLarge">
+            <line
+              :x1="RULER_WIDTH - 20"
+              :y1="tick.top"
+              :x2="RULER_WIDTH"
+              :y2="tick.top"
+              stroke="#333"
+              stroke-width="2"
+            />
+            <text
+              :x="RULER_WIDTH - 25"
+              :y="tick.top"
+              dy="5"
+              text-anchor="end"
+              font-size="13"
+              fill="#333"
+              :font-weight="tick.year % 100 === 0 ? 'bold' : 'normal'"
+            >
+              {{ tick.fullLabel || tick.label }}
+            </text>
+          </template>
+          <template v-else-if="tick.isMedium">
+            <line
+              :x1="RULER_WIDTH - 15"
+              :y1="tick.top"
+              :x2="RULER_WIDTH"
+              :y2="tick.top"
+              stroke="#444"
+              stroke-width="1.8"
+            />
+            <text
+              :x="RULER_WIDTH - 20"
+              :y="tick.top"
+              dy="4"
+              text-anchor="end"
+              font-size="12"
+              fill="#555"
+            >
+              {{ tick.label }}
+            </text>
+          </template>
+          <template v-else-if="tick.isSmall">
             <line
               :x1="RULER_WIDTH - 10"
               :y1="tick.top"
               :x2="RULER_WIDTH"
               :y2="tick.top"
               stroke="#666"
-              stroke-width="1.5"
+              stroke-width="1.2"
             />
-            <text
-              :x="RULER_WIDTH - 15"
-              :y="tick.top"
-              dy="4"
-              text-anchor="end"
-              font-size="12"
-              fill="#666"
-            >
-              {{ tick.label }}
-            </text>
           </template>
-          <!-- 月刻度 -->
-          <template v-else>
+          <template v-else-if="tick.isMicro">
             <line
-              :x1="RULER_WIDTH - 5"
+              :x1="RULER_WIDTH - 6"
               :y1="tick.top"
               :x2="RULER_WIDTH"
               :y2="tick.top"
-              stroke="#999"
-              stroke-width="1"
+              stroke="#888"
+              stroke-width="0.8"
             />
           </template>
         </g>

@@ -28,14 +28,16 @@ const eventList = computed(() =>
 
 // 使用 Composable 提取公共逻辑
 const {
-  PIXELS_PER_DAY,
+  // PIXELS_PER_DAY, // 移除
   RULER_WIDTH,
   START_PADDING,
   parseDate,
   formatDate,
   minDate,
   totalHeight,
-  ticks
+  ticks,
+  getTop, // 确保解构出 getTop
+  getHeight // 新增
 } = useDynastyTimeline(eventList, dynastyInfo)
 
 // 配置参数
@@ -66,13 +68,20 @@ const processedEvents = computed(() => {
     const startDate = parseDate(item.start || item.date)
     const endDate = item.end ? parseDate(item.end) : startDate
 
-    const startDays = (startDate - minDate.value) / (1000 * 60 * 60 * 24)
-    const endDays = (endDate - minDate.value) / (1000 * 60 * 60 * 24)
+    // const startDays = (startDate - minDate.value) / (1000 * 60 * 60 * 24)
+    // const endDays = (endDate - minDate.value) / (1000 * 60 * 60 * 24)
 
     // 如果是单点事件，给一点高度
     const isPoint = !item.end
-    const durationDays = isPoint ? 0 : endDays - startDays
-    const height = Math.max(durationDays * PIXELS_PER_DAY, 10) // 最小高度10px
+    // const durationDays = isPoint ? 0 : endDays - startDays
+
+    // 使用新的 getTop 和 getHeight
+    const top = getTop(startDate)
+    let height = 10 // 默认最小高度
+
+    if (!isPoint) {
+      height = Math.max(getHeight(startDate, endDate), 10)
+    }
 
     // 贪心布局
     let colIndex = -1
@@ -80,14 +89,14 @@ const processedEvents = computed(() => {
     // 文字在上方起始点旁边，结束点只有一个圆点。
     // 但是为了视觉美观，避免紧贴，多留一些空间。
     // 之前加了 20/PIXELS_PER_DAY，对于民国 (0.2) 来说是 100 天，大约 3 个月。
-    // 国民党一大(1924-01) 和 黄埔军校(1924-06) 相差 5 个月。
-    // 理论上 1924-01 + 3个月 = 1924-04 < 1924-06，应该不重叠。
-    // 但是下面 cols 更新时又加了一次间距，导致变成了 +6个月。
-    const occupyEndDays =
-      endDays + (isPoint ? 20 / PIXELS_PER_DAY : 5 / PIXELS_PER_DAY)
+    // 这里我们直接用像素高度来计算结束位置 (top + height + gap)
+    // 假设文字高度和间距大概占用 20-30px
+    const occupyHeight = height + (isPoint ? 20 : 10)
+    const occupyEndTop = top + occupyHeight
 
     for (let i = 0; i < cols.length; i++) {
-      if (cols[i] <= startDays) {
+      if (cols[i] <= top) {
+        // 使用 top 比较
         colIndex = i
         break
       }
@@ -95,9 +104,8 @@ const processedEvents = computed(() => {
     if (colIndex === -1) {
       colIndex = cols.length
     }
-    // 更新该列的结束时间，不再额外叠加间距，因为 occupyEndDays 已经包含缓冲了
-    // 稍微加一点点 (1px) 防止精度误差即可
-    cols[colIndex] = occupyEndDays + 1 / PIXELS_PER_DAY
+    // 更新该列的结束位置 (Y坐标)
+    cols[colIndex] = occupyEndTop + 1 // +1 buffer
 
     // 颜色处理：战争红色，政变紫色，其他深蓝
     let color
@@ -115,7 +123,7 @@ const processedEvents = computed(() => {
       colIndex,
       color,
       left: startOffset + colIndex * (COL_WIDTH + COL_GAP),
-      top: startDays * PIXELS_PER_DAY + START_PADDING,
+      top: top, // 使用计算好的 top
       height
     }
   })
@@ -174,34 +182,65 @@ const moveTooltip = (e) => {
 
         <!-- 刻度 -->
         <g v-for="(tick, idx) in ticks" :key="idx">
-          <template v-if="tick.type === 'year'">
+          <template v-if="tick.isLarge">
+            <line
+              :x1="RULER_WIDTH - 20"
+              :y1="tick.top"
+              :x2="RULER_WIDTH"
+              :y2="tick.top"
+              stroke="#333"
+              stroke-width="2"
+            />
+            <text
+              :x="RULER_WIDTH - 25"
+              :y="tick.top"
+              dy="5"
+              text-anchor="end"
+              font-size="13"
+              fill="#333"
+              :font-weight="tick.year % 100 === 0 ? 'bold' : 'normal'"
+            >
+              {{ tick.fullLabel || tick.label }}
+            </text>
+          </template>
+          <template v-else-if="tick.isMedium">
+            <line
+              :x1="RULER_WIDTH - 15"
+              :y1="tick.top"
+              :x2="RULER_WIDTH"
+              :y2="tick.top"
+              stroke="#444"
+              stroke-width="1.8"
+            />
+            <text
+              :x="RULER_WIDTH - 20"
+              :y="tick.top"
+              dy="4"
+              text-anchor="end"
+              font-size="12"
+              fill="#555"
+            >
+              {{ tick.label }}
+            </text>
+          </template>
+          <template v-else-if="tick.isSmall">
             <line
               :x1="RULER_WIDTH - 10"
               :y1="tick.top"
               :x2="RULER_WIDTH"
               :y2="tick.top"
               stroke="#666"
-              stroke-width="1.5"
+              stroke-width="1.2"
             />
-            <text
-              :x="RULER_WIDTH - 15"
-              :y="tick.top"
-              dy="4"
-              text-anchor="end"
-              font-size="12"
-              fill="#666"
-            >
-              {{ tick.label }}
-            </text>
           </template>
-          <template v-else>
+          <template v-else-if="tick.isMicro">
             <line
-              :x1="RULER_WIDTH - 5"
+              :x1="RULER_WIDTH - 6"
               :y1="tick.top"
               :x2="RULER_WIDTH"
               :y2="tick.top"
-              stroke="#999"
-              stroke-width="1"
+              stroke="#888"
+              stroke-width="0.8"
             />
           </template>
         </g>
