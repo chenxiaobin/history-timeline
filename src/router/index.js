@@ -1,18 +1,23 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import HistoryTimeline from '../components/HistoryTimeline.vue'
-import EmperorTimeline from '../components/EmperorTimeline.vue'
+import PortalHome from '../views/PortalHome.vue'
+import HistoryTimeline from '../modules/HistoryTimeline.vue'
+import HistorySlice from '../modules/HistorySlice.vue'
 
 const routes = [
   {
     path: '/',
     name: 'Home',
+    component: PortalHome
+  },
+  {
+    path: '/timeline',
+    name: 'Timeline',
     component: HistoryTimeline
   },
   {
-    path: '/emperors/:key',
-    name: 'Emperors',
-    component: EmperorTimeline,
-    props: (route) => ({ dynastyKey: route.params.key })
+    path: '/slice',
+    name: 'Slice',
+    component: HistorySlice
   }
 ]
 

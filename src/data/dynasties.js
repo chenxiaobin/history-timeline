@@ -124,7 +124,13 @@ export const majorDynasties = [
     color: '#BE0032 ',
     destroyed: '李自成'
   },
-  { name: '后金', start: 1616, end: 1636, key: 'HouJin' },
+  {
+    name: '后金',
+    start: 1616,
+    end: 1636,
+    key: 'HouJin',
+    belongTo: '少数民族政权'
+  },
   {
     name: '清朝',
     start: 1636,
@@ -151,10 +157,18 @@ export const detailedDynasties = [
     name: '秦国',
     start: -770,
     end: -221,
-    belongTo: '春秋',
+    belongTo: ['春秋', '战国'],
     key: 'QinGuo',
     color: '#101010',
     destroyed: '秦朝'
+  },
+  {
+    name: '晋国',
+    start: -1033,
+    end: -376,
+    belongTo: '春秋',
+    color: '#8B0000',
+    destroyed: ['韩国', '魏国', '赵国']
   },
   {
     name: '韩国',
@@ -184,7 +198,7 @@ export const detailedDynasties = [
     name: '楚国',
     start: -1042,
     end: -223,
-    belongTo: '战国',
+    belongTo: ['春秋', '战国'],
     color: '#C00000',
     destroyed: '秦国'
   },
@@ -201,7 +215,7 @@ export const detailedDynasties = [
     start: -1046,
     end: -386,
     color: '#800080',
-    belongTo: '战国',
+    belongTo: '春秋',
     destroyed: '齐国（田）'
   },
   {
@@ -211,6 +225,14 @@ export const detailedDynasties = [
     color: '#006400',
     belongTo: '战国',
     destroyed: '秦国'
+  },
+  {
+    name: '宋国',
+    start: -1040,
+    end: -286,
+    color: '#B22222',
+    belongTo: '春秋',
+    destroyed: '齐国（田）'
   },
   // 三国细分
   {
@@ -239,6 +261,130 @@ export const detailedDynasties = [
     key: 'EasternWu',
     color: '#008080',
     destroyed: '西晋'
+  },
+  {
+    name: '成汉（氐）',
+    start: 304,
+    end: 347,
+    belongTo: '五胡乱华',
+    color: '#DAA520',
+    destroyed: '东晋'
+  },
+  {
+    name: '汉赵（匈奴）',
+    start: 304,
+    end: 329,
+    belongTo: '五胡乱华',
+    color: '#2C3E50',
+    destroyed: '后赵（羯）'
+  },
+  {
+    name: '后赵（羯）',
+    start: 319,
+    end: 351,
+    belongTo: '五胡乱华',
+    color: '#B22222',
+    destroyed: '冉魏'
+  },
+  {
+    name: '前凉',
+    start: 317,
+    end: 376,
+    belongTo: '五胡乱华',
+    destroyed: '前秦（氐）'
+  },
+  {
+    name: '前燕（鲜卑）',
+    start: 337,
+    end: 370,
+    belongTo: '五胡乱华',
+    color: '#228B22',
+    destroyed: '前秦（氐）'
+  },
+  {
+    name: '前秦（氐）',
+    start: 351,
+    end: 394,
+    belongTo: '五胡乱华',
+    color: '#DAA520',
+    destroyed: '后秦（羌）'
+  },
+  {
+    name: '后秦（羌）',
+    start: 384,
+    end: 417,
+    belongTo: '五胡乱华',
+    color: '#dddddd',
+    destroyed: '东晋'
+  },
+  {
+    name: '后凉（氐）',
+    start: 386,
+    end: 403,
+    belongTo: '五胡乱华',
+    color: '#DAA520',
+    destroyed: '后秦（羌）'
+  },
+  {
+    name: '南燕（鲜卑）',
+    start: 398,
+    end: 410,
+    belongTo: '五胡乱华',
+    color: '#228B22',
+    destroyed: '东晋'
+  },
+  {
+    name: '后燕（鲜卑）',
+    start: 384,
+    end: 409,
+    belongTo: '五胡乱华',
+    color: '#228B22',
+    destroyed: '北燕'
+  },
+  {
+    name: '西凉',
+    start: 400,
+    end: 420,
+    belongTo: '五胡乱华',
+    destroyed: '北凉（匈奴）'
+  },
+  {
+    name: '北凉（匈奴）',
+    start: 397,
+    end: 439,
+    belongTo: '五胡乱华',
+    color: '#2C3E50',
+    destroyed: '北魏'
+  },
+  {
+    name: '北燕',
+    start: 407,
+    end: 436,
+    belongTo: '五胡乱华',
+    destroyed: '北魏'
+  },
+  {
+    name: '南凉（鲜卑）',
+    start: 397,
+    end: 414,
+    belongTo: '五胡乱华',
+    destroyed: '西秦（鲜卑）'
+  },
+  {
+    name: '西秦（鲜卑）',
+    start: 385,
+    end: 431,
+    belongTo: '五胡乱华',
+    color: '#228B22',
+    destroyed: '胡夏（匈奴）'
+  },
+  {
+    name: '胡夏（匈奴）',
+    start: 407,
+    end: 431,
+    belongTo: '五胡乱华',
+    color: '#2C3E50',
+    destroyed: '吐谷浑'
   },
   // 南北朝 - 南朝
   {
@@ -323,7 +469,7 @@ export const detailedDynasties = [
     color: '#101010',
     destroyed: '隋朝'
   },
-  // 五代 (十国略，太碎了)
+  // 五代
   {
     name: '后梁',
     start: 907,
@@ -371,22 +517,58 @@ export const detailedDynasties = [
   },
   // 十国
   {
-    name: '吴',
+    name: '前蜀',
+    start: 907,
+    end: 925,
+    belongTo: '十国',
+    key: 'TenKingdoms_FormerShu',
+    color: '#FFA500',
+    destroyed: '后唐'
+  },
+  {
+    name: '荆南',
+    start: 924,
+    end: 963,
+    belongTo: '十国',
+    key: 'TenKingdoms_Jingnan',
+    color: '#FFA500',
+    destroyed: '北宋'
+  },
+  {
+    name: '后蜀',
+    start: 934,
+    end: 965,
+    belongTo: '十国',
+    key: 'TenKingdoms_LaterShu',
+    color: '#FFA500',
+    destroyed: '北宋'
+  },
+  {
+    name: '南汉',
+    start: 917,
+    end: 971,
+    belongTo: '十国',
+    key: 'TenKingdoms_SouthernHan',
+    color: '#FFA500',
+    destroyed: '北宋'
+  },
+  {
+    name: '南唐',
+    start: 937,
+    end: 975,
+    belongTo: '十国',
+    key: 'TenKingdoms_SouthernTang',
+    color: '#FFA500',
+    destroyed: '北宋'
+  },
+  {
+    name: '南吴',
     start: 902,
     end: 937,
     belongTo: '十国',
     key: 'TenKingdoms_Wu',
     color: '#FFA500',
     destroyed: '南唐'
-  },
-  {
-    name: '吴越',
-    start: 907,
-    end: 978,
-    belongTo: '十国',
-    key: 'TenKingdoms_Wuyue',
-    color: '#FFA500',
-    destroyed: '北宋'
   },
   {
     name: '闽',
@@ -407,47 +589,11 @@ export const detailedDynasties = [
     destroyed: '南唐'
   },
   {
-    name: '南汉',
-    start: 917,
-    end: 971,
-    belongTo: '十国',
-    key: 'TenKingdoms_SouthernHan',
-    color: '#FFA500',
-    destroyed: '北宋'
-  },
-  {
-    name: '前蜀',
+    name: '吴越',
     start: 907,
-    end: 925,
+    end: 978,
     belongTo: '十国',
-    key: 'TenKingdoms_FormerShu',
-    color: '#FFA500',
-    destroyed: '后唐'
-  },
-  {
-    name: '后蜀',
-    start: 934,
-    end: 965,
-    belongTo: '十国',
-    key: 'TenKingdoms_LaterShu',
-    color: '#FFA500',
-    destroyed: '北宋'
-  },
-  {
-    name: '荆南',
-    start: 924,
-    end: 963,
-    belongTo: '十国',
-    key: 'TenKingdoms_Jingnan',
-    color: '#FFA500',
-    destroyed: '北宋'
-  },
-  {
-    name: '南唐',
-    start: 937,
-    end: 975,
-    belongTo: '十国',
-    key: 'TenKingdoms_SouthernTang',
+    key: 'TenKingdoms_Wuyue',
     color: '#FFA500',
     destroyed: '北宋'
   },
@@ -485,6 +631,9 @@ export const detailedDynasties = [
 export const otherDynasties = [
   { name: '犬戎', start: -780, end: -771 },
   { name: '匈奴', start: 306, end: 316 },
+  { name: '冉魏', start: 350, end: 352 },
+  { name: '吐谷浑', start: 329, end: 663 },
+  { name: '吐蕃', start: 618, end: 842 },
   { name: '辽朝', start: 907, end: 1125, key: 'Liao' },
   { name: '西夏', start: 1038, end: 1227, key: 'WesternXia' },
   { name: '金朝', start: 1115, end: 1234, key: 'Jin' },
@@ -495,10 +644,31 @@ export const otherDynasties = [
 export const specialPeriods = [
   // 纷争时期
   { name: '楚汉争霸', start: -206, end: -202, color: '#FFD70030' },
-  { name: '春秋', start: -770, end: -476, color: '#FFD70030' },
-  { name: '战国', start: -475, end: -221, color: '#FFA50030' },
-  { name: '三国', start: 220, end: 280, color: '#FFD70030' },
-  { name: '五胡乱华', start: 304, end: 439, color: '#FFD70030' },
+  {
+    name: '春秋',
+    start: -770,
+    end: -476,
+    color: '#FFD70030',
+    merged: true,
+    belongTo: '东周'
+  },
+  {
+    name: '战国',
+    start: -475,
+    end: -221,
+    color: '#FFA50030',
+    merged: true,
+    belongTo: '东周'
+  },
+  { name: '三国', start: 220, end: 280, color: '#FFD70030', merged: true },
+  {
+    name: '五胡乱华',
+    start: 304,
+    end: 439,
+    color: '#FFD70030',
+    merged: true,
+    belongTo: '西晋'
+  },
   {
     name: '军阀割据',
     start: '1916-06-06',
