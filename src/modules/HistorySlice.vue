@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import EightKingsChaos from './slices/EightKings/index.vue'
 import FiveBarbarians from './slices/FiveBarbarians/index.vue'
+import AnLushanRebellion from './slices/AnLushanRebellion/index.vue'
 
 const router = useRouter()
 
@@ -12,7 +13,8 @@ const goBack = () => {
 
 const tabs = [
   { id: 'eight-kings', name: '八王之乱', component: EightKingsChaos },
-  { id: 'five-barbarians', name: '五胡乱华', component: FiveBarbarians }
+  { id: 'five-barbarians', name: '五胡乱华', component: FiveBarbarians },
+  { id: 'an-lushan', name: '安史之乱', component: AnLushanRebellion }
 ]
 
 const currentTabId = ref(tabs[0].id)

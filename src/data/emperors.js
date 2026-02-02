@@ -1411,6 +1411,173 @@ export const emperors = {
       ]
     }
   ],
+  WesternJin: [
+    {
+      name: '司马炎',
+      templeName: '晋世祖',
+      posthumousName: '武皇帝',
+      era: ['泰始', '咸宁', '太康', '太熙'],
+      start: 266,
+      end: 290,
+      queens: [
+        { name: '杨艳', posthumousName: '武元皇后', start: 266, end: 274 },
+        { name: '杨芷', posthumousName: '武悼皇后', start: 276, end: 290 }
+      ]
+    },
+    {
+      name: '司马衷',
+      templeName: '',
+      posthumousName: '惠皇帝',
+      era: ['永熙', '永平', '元康', '永康', '永宁', '太安', '永安', '建武', '永兴', '光熙'],
+      start: 290,
+      end: 306,
+      queens: [
+        { name: '贾南风', posthumousName: '惠贾皇后', start: 290, end: 300 },
+        { name: '羊献容', posthumousName: '惠羊皇后', start: 300, end: 306 }
+      ]
+    },
+    {
+      name: '司马炽',
+      templeName: '',
+      posthumousName: '怀皇帝',
+      era: ['永嘉'],
+      start: 306,
+      end: 311,
+      queens: []
+    },
+    {
+      name: '司马邺',
+      templeName: '',
+      posthumousName: '愍皇帝',
+      era: ['建兴'],
+      start: 313,
+      end: 316,
+      queens: []
+    }
+  ],
+  EasternJin: [
+    {
+      name: '司马睿',
+      templeName: '晋中宗',
+      posthumousName: '元皇帝',
+      era: ['建武', '太兴', '永昌'],
+      start: 317,
+      end: 323,
+      queens: [
+        { name: '虞孟母', posthumousName: '元敬皇后', start: '317', end: '323' }
+      ]
+    },
+    {
+      name: '司马绍',
+      templeName: '晋肃宗',
+      posthumousName: '明皇帝',
+      era: ['太宁'],
+      start: 323,
+      end: 325,
+      queens: [
+        { name: '庾文君', posthumousName: '明穆皇后', start: '323', end: '325' }
+      ]
+    },
+    {
+      name: '司马衍',
+      templeName: '晋显宗',
+      posthumousName: '成皇帝',
+      era: ['咸和', '咸康'],
+      start: 325,
+      end: 342,
+      queens: [
+        { name: '杜陵阳', posthumousName: '成恭皇后', start: '336', end: '342' }
+      ]
+    },
+    {
+      name: '司马岳',
+      templeName: '晋康宗',
+      posthumousName: '康皇帝',
+      era: ['建元'],
+      start: 342,
+      end: 344,
+      queens: [
+        { name: '褚蒜子', posthumousName: '康献皇后', start: '342', end: '344' }
+      ]
+    },
+    {
+      name: '司马聃',
+      templeName: '晋孝宗',
+      posthumousName: '穆皇帝',
+      era: ['永和', '升平'],
+      start: 344,
+      end: 361,
+      queens: [
+        { name: '何法倪', posthumousName: '穆章皇后', start: '357', end: '361' }
+      ]
+    },
+    {
+      name: '司马丕',
+      templeName: '晋哀宗',
+      posthumousName: '哀皇帝',
+      era: ['隆和', '兴宁'],
+      start: 361,
+      end: 365,
+      queens: [
+        { name: '王穆之', posthumousName: '哀靖皇后', start: '361', end: '364' }
+      ]
+    },
+    {
+      name: '司马奕',
+      templeName: '',
+      posthumousName: '废皇帝',
+      era: ['太和'],
+      start: 365,
+      end: 371,
+      queens: [
+        { name: '庾道怜', posthumousName: '孝皇后', start: '365', end: '371' }
+      ]
+    },
+    {
+      name: '司马昱',
+      templeName: '晋太宗',
+      posthumousName: '简文皇帝',
+      era: ['咸安'],
+      start: 371,
+      end: 372,
+      queens: [
+        { name: '王简姬', posthumousName: '简文顺皇后', start: '371', end: '372' }
+      ]
+    },
+    {
+      name: '司马曜',
+      templeName: '晋烈宗',
+      posthumousName: '孝武皇帝',
+      era: ['宁康', '太元'],
+      start: 372,
+      end: 396,
+      queens: [
+        { name: '王法慧', posthumousName: '孝武定皇后', start: '381', end: '389' }
+      ]
+    },
+    {
+      name: '司马德宗',
+      templeName: '晋安帝',
+      posthumousName: '安皇帝',
+      era: ['隆安', '元兴', '义熙'],
+      start: 396,
+      end: 418,
+      queens: [
+        { name: '王神爱', posthumousName: '安僖皇后', start: '396', end: '412' }
+      ]
+    },
+    {
+      name: '司马德文',
+      templeName: '晋恭帝',
+      posthumousName: '恭皇帝',
+      era: ['元熙'],
+      start: 418,
+      end: 420,
+      queens: [
+        { name: '褚灵媛', posthumousName: '恭思皇后', start: '418', end: '420' }
+      ]
+    }
+  ],
   LiuSong: [
     {
       name: '刘裕',

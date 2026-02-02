@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import PortalHome from '../views/PortalHome.vue'
 import HistoryTimeline from '../modules/HistoryTimeline.vue'
 import HistorySlice from '../modules/HistorySlice.vue'
+import DynastyChronicle from '../modules/DynastyChronicle.vue'
 
 const routes = [
   {
@@ -18,6 +19,11 @@ const routes = [
     path: '/slice',
     name: 'Slice',
     component: HistorySlice
+  },
+  {
+    path: '/dynasty-chronicle',
+    name: 'DynastyChronicle',
+    component: DynastyChronicle
   }
 ]
 

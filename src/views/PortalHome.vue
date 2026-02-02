@@ -34,16 +34,17 @@ const navigateTo = (path) => {
             <h2>历史切片</h2>
             <p>微观视角剖析关键历史断面，深度还原事件原貌与人物关系。</p>
           </div>
-          <span class="tag-coming-soon">建设中</span>
+          <div class="card-arrow">→</div>
         </div>
 
-        <!-- 预留模块 -->
-        <div class="module-card placeholder">
-          <div class="card-icon">➕</div>
+        <!-- 模块 3: 皇朝年谱 -->
+        <div class="module-card" @click="navigateTo('/dynasty-chronicle')">
+          <div class="card-icon">📅</div>
           <div class="card-content">
-            <h2>更多功能</h2>
-            <p>地理演变、人物图谱等功能规划中...</p>
+            <h2>皇朝年谱</h2>
+            <p>系统梳理各朝代帝王世系与重大事件，构建完整的历史时间线。</p>
           </div>
+          <div class="card-arrow">→</div>
         </div>
       </div>
     </div>

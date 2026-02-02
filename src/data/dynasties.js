@@ -670,6 +670,13 @@ export const specialPeriods = [
     belongTo: '西晋'
   },
   {
+    name: '安史之乱',
+    start: '755-12-16',
+    end: '763-02-17',
+    color: '#FFD70030',
+    merged: false
+  },
+  {
     name: '军阀割据',
     start: '1916-06-06',
     end: '1928-12-29',
