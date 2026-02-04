@@ -1,6 +1,7 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
+import { dynastyData } from '../data/dynastyChronicle'
 
 const router = useRouter()
 
@@ -16,49 +17,157 @@ const formatYear = (year, short = false) => {
   return year < 0 ? `公元前${Math.abs(year)}年` : `${year}年`
 }
 
+// 格式化日期显示，根据精度显示不同格式
+const formatDate = (dateStr) => {
+  if (typeof dateStr === 'number') {
+    // 只有年份
+    return dateStr < 0 ? `公元前${Math.abs(dateStr)}年` : `${dateStr}年`
+  }
+  
+  // 处理字符串格式，支持负数年份
+  let year, month, day
+  if (dateStr.startsWith('-')) {
+    // 负数年份
+    const match = dateStr.match(/-([0-9]+)-?([0-9]+)?-?([0-9]+)?/)
+    if (match) {
+      year = -parseInt(match[1], 10)
+      month = match[2] ? parseInt(match[2], 10) : undefined
+      day = match[3] ? parseInt(match[3], 10) : undefined
+    } else {
+      return dateStr
+    }
+  } else {
+    // 正数年份
+    const parts = dateStr.split('-').map(Number)
+    year = parts[0]
+    month = parts[1]
+    day = parts[2]
+  }
+  
+  const isNegative = year < 0
+  const absYear = Math.abs(year)
+  const yearStr = isNegative ? `公元前${absYear}年` : `${year}年`
+  
+  if (month === undefined) {
+    // 只有年份
+    return yearStr
+  } else if (day === undefined) {
+    // 年份-月份
+    return `${yearStr}${month}月`
+  } else {
+    // 年份-月份-日期
+    return `${yearStr}${month}月${day}日`
+  }
+  
+  return dateStr
+}
+
 // 格式化事件时间
 const formatEventTime = (event) => {
   if (event.date) {
-    return formatYear(event.date)
+    return formatDate(event.date)
   } else if (event.start && event.end) {
-    return `${formatYear(event.start)} - ${formatYear(event.end)}`
+    return `${formatDate(event.start)} - ${formatDate(event.end)}`
   }
   return ''
 }
 
-// 模拟数据：朝代和帝王信息
-const dynastyData = [
-  {
-    id: 'qin',
-    name: '秦朝',
-    startYear: -221,
-    endYear: -206,
-    emperors: [
-      { 
-        id: 'qin-shihuang', 
-        name: '秦始皇', 
-        realName: '嬴政',
-        reignStart: -221, 
-        reignEnd: -210,
-        events: [
-          { id: 'qin-1', date: -221, name: '统一六国', description: '秦始皇嬴政完成统一大业，建立秦朝，自称始皇帝' },
-          { id: 'qin-2', start: -221, end: -210, name: '修建长城', description: '为抵御北方匈奴，秦始皇下令修建万里长城' }
-        ]
-      },
-      { 
-        id: 'qin-erhuang', 
-        name: '秦二世', 
-        realName: '胡亥',
-        reignStart: -210, 
-        reignEnd: -207,
-        events: [
-          { id: 'qin-5', date: -210, name: '秦始皇驾崩', description: '秦始皇在东巡途中驾崩，胡亥继位为秦二世' },
-          { id: 'qin-6', start: -209, end: -207, name: '陈胜吴广起义', description: '陈胜吴广在大泽乡发动起义，揭开秦末农民起义序幕' }
-        ]
-      }
-    ]
+// 解析不同格式的时间为数字年份（支持：年份、年份-月份、年份-月份-日期）
+// isEnd参数表示是否为结束时间，如果是结束时间且只有年份，则按该年12月31日处理
+const parseDate = (dateStr, isEnd = false) => {
+  if (typeof dateStr === 'number') {
+    if (isEnd) {
+      // 结束时间只有年份，按12月31日处理，返回接近下一年的小数（如290 → 290.999）
+      return dateStr + 0.9999
+    }
+    // 开始时间只有年份，按1月1日处理，返回整数年份
+    return dateStr
   }
-]
+  
+  const parts = dateStr.split('-').map(Number)
+  
+  if (parts.length === 1) {
+    // 只有年份
+    if (isEnd) {
+      // 结束时间，按12月31日处理
+      return parts[0] + 0.9999
+    }
+    // 开始时间，按1月1日处理
+    return parts[0]
+  } else if (parts.length === 2) {
+    // 年份-月份
+    const year = parts[0]
+    const month = parts[1]
+    
+    if (isEnd) {
+      // 结束时间，按该月最后一天处理
+      // 计算该月的天数
+      const daysInMonth = new Date(year, month, 0).getDate()
+      // 返回该月最后一天的小数年份
+      return year + (month - 1) / 12 + (daysInMonth - 1) / (daysInMonth * 12)
+    }
+    // 开始时间，按该月第一天处理
+    return year + (month - 1) / 12
+  } else if (parts.length === 3) {
+    // 年份-月份-日期，直接转换
+    const year = parts[0]
+    const month = parts[1]
+    const day = parts[2]
+    
+    // 计算该月的天数
+    const daysInMonth = new Date(year, month, 0).getDate()
+    
+    return year + (month - 1) / 12 + (day - 1) / (daysInMonth * 12)
+  }
+  
+  return dateStr
+}
+
+// 判断事件时间是否在皇帝在位时间范围内
+const isEventInReignPeriod = (event, emperor) => {
+  // 解析皇帝在位时间范围：开始时间按1月1日，结束时间按12月31日
+  const emperorStart = parseDate(emperor.reignStart, false)
+  const emperorEnd = parseDate(emperor.reignEnd, true)
+  
+  if (event.date) {
+    // 事件是具体日期
+    const eventDate = parseDate(event.date)
+    return eventDate >= emperorStart && eventDate <= emperorEnd
+  } else if (event.start && event.end) {
+    // 事件是时间范围，判断是否与皇帝在位时间有交集
+    const eventStart = parseDate(event.start)
+    const eventEnd = parseDate(event.end)
+    
+    return eventEnd >= emperorStart && eventStart <= emperorEnd
+  }
+  return false
+}
+
+// 响应式变量：当前选中的朝代
+const selectedDynasty = ref('西晋')
+
+// 滚动到选中的朝代
+const scrollToDynasty = () => {
+  const dynastyIndex = dynastyData.findIndex(dynasty => dynasty.name === selectedDynasty.value)
+  if (dynastyIndex !== -1) {
+    const dynastyBlock = document.querySelectorAll('.dynasty-block')[dynastyIndex]
+    if (dynastyBlock) {
+      dynastyBlock.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }
+}
+
+// 监听选中朝代变化，滚动到对应位置
+watch(selectedDynasty, scrollToDynasty)
+
+// 组件挂载时，默认滚动到西晋
+onMounted(() => {
+  nextTick(() => {
+    scrollToDynasty()
+  })
+})
+
+
 </script>
 
 <template>
@@ -66,6 +175,13 @@ const dynastyData = [
     <div class="header">
       <button class="back-home-btn" @click="goBack" title="返回首页">⌂</button>
       <h1>皇朝年谱</h1>
+      <div class="dynasty-selector">
+        <select v-model="selectedDynasty" class="dynasty-dropdown">
+          <option v-for="dynasty in dynastyData" :key="dynasty.name" :value="dynasty.name">
+            {{ dynasty.name }}
+          </option>
+        </select>
+      </div>
     </div>
 
     <div class="content-area">
@@ -73,8 +189,8 @@ const dynastyData = [
       <div class="dynasty-timeline">
         <!-- 每个朝代块 -->
         <div 
-          v-for="dynasty in dynastyData" 
-          :key="dynasty.id"
+          v-for="(dynasty, index) in dynastyData" 
+          :key="index"
           class="dynasty-block"
         >
           <!-- 朝代头部信息 -->
@@ -89,8 +205,8 @@ const dynastyData = [
           <!-- 帝王列表：每个帝王一行，分左中右三列 -->
           <div class="emperors-list">
             <div 
-              v-for="emperor in dynasty.emperors" 
-              :key="emperor.id"
+              v-for="(emperor, index) in dynasty.emperors" 
+              :key="index"
               class="emperor-row"
             >
               <!-- 中间：皇帝信息 -->
@@ -111,9 +227,10 @@ const dynastyData = [
               <!-- 右侧：事件列表 -->
               <div class="year-column">
                 <div 
-                  v-for="event in emperor.events" 
-                  :key="event.id"
+                  v-for="(event, index) in emperor.events" 
+                  :key="index"
                   class="year-item"
+                  :class="{ 'out-of-reign': !isEventInReignPeriod(event, emperor) }"
                 >
                   <div class="event-time">
                     {{ formatEventTime(event) }} 
@@ -148,9 +265,38 @@ const dynastyData = [
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   display: flex;
   align-items: center;
+  gap: 20px;
   z-index: 10;
   height: 50px;
   box-sizing: border-box;
+}
+
+.dynasty-selector {
+  display: flex;
+  align-items: center;
+}
+
+.dynasty-dropdown {
+  padding: 6px 10px;
+  font-size: 14px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: white;
+  color: #333;
+  cursor: pointer;
+  min-width: 120px;
+  transition: all 0.3s ease;
+}
+
+.dynasty-dropdown:hover {
+  border-color: #4290ff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.dynasty-dropdown:focus {
+  outline: none;
+  border-color: #4290ff;
+  box-shadow: 0 0 0 2px rgba(66, 144, 255, 0.2);
 }
 
 .back-home-btn {
@@ -328,6 +474,25 @@ const dynastyData = [
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+/* 超出皇帝在位时间的事件样式 */
+.year-item.out-of-reign {
+  background: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  color: #999;
+}
+
+.year-item.out-of-reign .event-time {
+  color: #999;
+}
+
+.year-item.out-of-reign .event-name {
+  color: #999;
+}
+
+.year-item.out-of-reign .event-description {
+  color: #999;
 }
 
 .event-time {

@@ -1417,8 +1417,8 @@ export const emperors = {
       templeName: '晋世祖',
       posthumousName: '武皇帝',
       era: ['泰始', '咸宁', '太康', '太熙'],
-      start: 266,
-      end: 290,
+      start: '265-12',
+      end: '290-04',
       queens: [
         { name: '杨艳', posthumousName: '武元皇后', start: 266, end: 274 },
         { name: '杨芷', posthumousName: '武悼皇后', start: 276, end: 290 }
@@ -1429,8 +1429,8 @@ export const emperors = {
       templeName: '',
       posthumousName: '惠皇帝',
       era: ['永熙', '永平', '元康', '永康', '永宁', '太安', '永安', '建武', '永兴', '光熙'],
-      start: 290,
-      end: 306,
+      start: '290-04',
+      end: '306-11',
       queens: [
         { name: '贾南风', posthumousName: '惠贾皇后', start: 290, end: 300 },
         { name: '羊献容', posthumousName: '惠羊皇后', start: 300, end: 306 }
@@ -1441,8 +1441,8 @@ export const emperors = {
       templeName: '',
       posthumousName: '怀皇帝',
       era: ['永嘉'],
-      start: 306,
-      end: 311,
+      start: '306-11',
+      end: '311-06',
       queens: []
     },
     {
@@ -1450,8 +1450,8 @@ export const emperors = {
       templeName: '',
       posthumousName: '愍皇帝',
       era: ['建兴'],
-      start: 313,
-      end: 316,
+      start: '313-04',
+      end: '316-12',
       queens: []
     }
   ],
