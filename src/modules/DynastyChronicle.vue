@@ -2,6 +2,8 @@
 import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { dynastyData } from '../data/dynastyChronicle'
+import { royalFamilyTree } from '../data/royalFamilyTree'
+import * as d3 from 'd3'
 
 const router = useRouter()
 
@@ -146,6 +148,11 @@ const isEventInReignPeriod = (event, emperor) => {
 // 响应式变量：当前选中的朝代
 const selectedDynasty = ref('西晋')
 
+// 响应式变量：族谱弹出框
+const showFamilyTree = ref(false)
+const currentDynasty = ref(null)
+const familyTreeSvg = ref('')
+
 // 滚动到选中的朝代
 const scrollToDynasty = () => {
   const dynastyIndex = dynastyData.findIndex(dynasty => dynasty.name === selectedDynasty.value)
@@ -166,6 +173,308 @@ onMounted(() => {
     scrollToDynasty()
   })
 })
+
+// 显示族谱弹出框
+const showFamilyTreePopup = (dynasty) => {
+  currentDynasty.value = dynasty
+  
+  // 先显示弹出框
+  showFamilyTree.value = true
+  
+  // 等待DOM更新后，获取弹出框的实际宽高
+  nextTick(() => {
+    const popupContent = document.querySelector('.popup-content')
+    if (popupContent) {
+      // 获取弹出框内容区域的实际宽高
+      const contentWidth = popupContent.clientWidth - 40 // 减去padding（20px * 2）
+      const contentHeight = popupContent.clientHeight - 40 // 减去padding（20px * 2）
+      
+      // 根据弹出框实际宽高生成SVG
+      familyTreeSvg.value = drawFamilyTree(dynasty.name, contentWidth, contentHeight)
+      
+      // 再次等待DOM更新后，添加D3.js的zoom功能
+      nextTick(() => {
+        const svgElement = document.querySelector('.popup-content svg')
+        if (svgElement) {
+          // 添加D3.js的zoom功能
+          const svg = d3.select(svgElement)
+          const g = svg.select('g')
+          
+          // 获取SVG和内容的尺寸
+          const svgRect = svgElement.getBoundingClientRect()
+          const contentRect = g.node().getBBox()
+          
+          // 计算初始缩放比例，让内容完整显示在SVG中
+          const scaleX = (svgRect.width - 100) / contentRect.width // 减去边距
+          const scaleY = (svgRect.height - 100) / contentRect.height // 减去边距
+          const initialScale = Math.min(scaleX, scaleY, 1) // 最大不超过1倍
+          
+          // 计算居中偏移量
+          const translateX = (svgRect.width - contentRect.width * initialScale) / 2 - contentRect.x * initialScale
+          const translateY = (svgRect.height - contentRect.height * initialScale) / 2 - contentRect.y * initialScale
+          
+          // 创建zoom行为
+          const zoom = d3.zoom()
+            .scaleExtent([0.5, 3]) // 缩放范围：最小0.5倍，最大3倍
+            .on('zoom', (event) => {
+              g.attr('transform', event.transform)
+            })
+          
+          // 添加zoom行为到SVG
+          svg.call(zoom)
+          
+          // 设置初始缩放状态，让内容完整显示
+          svg.call(zoom.transform, d3.zoomIdentity.translate(translateX, translateY).scale(initialScale))
+          
+          // 添加鼠标拖动功能
+          svg.style('cursor', 'move')
+          
+          // 修复滚动冲突：当鼠标悬停在SVG上时，禁用页面滚动
+          svg.on('mouseenter', () => {
+            document.body.style.overflow = 'hidden'
+          })
+          
+          svg.on('mouseleave', () => {
+            document.body.style.overflow = 'auto'
+          })
+        }
+      })
+    }
+  })
+}
+
+// 关闭族谱弹出框
+const closeFamilyTreePopup = () => {
+  showFamilyTree.value = false
+  currentDynasty.value = null
+  familyTreeSvg.value = ''
+}
+
+// 绘制族谱组织架构图（使用D3.js tree布局，水平思维导图风格）
+const drawFamilyTree = (dynastyName, contentWidth, contentHeight) => {
+  const familyTree = royalFamilyTree[dynastyName]
+  if (!familyTree) return ''
+  
+  const members = familyTree.members
+  
+  // 构建层次数据结构
+  const buildHierarchy = () => {
+    const nodeMap = new Map()
+    
+    // 创建所有节点
+    members.forEach(member => {
+      nodeMap.set(member.id, {
+        ...member,
+        children: []
+      })
+    })
+    
+    // 构建父子关系
+    let rootNode = null
+    members.forEach(member => {
+      const currentNode = nodeMap.get(member.id)
+      if (member.father === null) {
+        rootNode = currentNode
+      } else {
+        const fatherNode = nodeMap.get(member.father)
+        if (fatherNode) {
+          fatherNode.children.push(currentNode)
+        }
+      }
+    })
+    
+    return rootNode
+  }
+  
+  const root = buildHierarchy()
+  if (!root) return ''
+  
+  // 创建水平方向的tree布局，使用nodeSize控制节点间距
+  const treeLayout = d3.tree()
+    .nodeSize([60, 300]) // [垂直间距, 水平间距]
+    .separation((a, b) => (a.parent === b.parent ? 1.2 : 2)) // 增加节点间距
+  
+  // 生成层次数据
+  const hierarchy = d3.hierarchy(root)
+  const treeData = treeLayout(hierarchy)
+  
+  // 计算实际需要的SVG尺寸
+  const nodeWidth = 150
+  const nodeHeight = 60
+  const margin = { top: 50, right: 50, bottom: 50, left: 100 }
+  
+  // 计算节点的边界
+  let minX = Infinity
+  let maxX = -Infinity
+  let minY = Infinity
+  let maxY = -Infinity
+  
+  treeData.descendants().forEach(node => {
+    const x = node.y
+    const y = node.x
+    
+    minX = Math.min(minX, x - nodeWidth / 2)
+    maxX = Math.max(maxX, x + nodeWidth / 2)
+    minY = Math.min(minY, y - nodeHeight / 2)
+    maxY = Math.max(maxY, y + nodeHeight / 2)
+  })
+  
+  // 使用弹出框的实际宽高作为SVG尺寸，如果没有传入则使用默认值
+  const svgWidth = contentWidth || 1600
+  const svgHeight = contentHeight || 800
+  
+  // 创建SVG字符串，添加viewBox确保内容正确显示
+  let svg = `<svg width="${svgWidth}" height="${svgHeight}" viewBox="0 0 ${svgWidth} ${svgHeight}" xmlns="http://www.w3.org/2000/svg">`
+  
+  // 定义箭头标记（小尺寸灰色，确保箭头尖端准确指向目标）
+  svg += `<defs>`
+  svg += `<marker id="arrowhead" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="6" refX="9" refY="3" orient="auto">`
+  svg += `<polygon points="0 0, 10 3, 0 6" fill="#999" stroke="#999" stroke-width="0.5" />`
+  svg += `</marker>`
+  svg += `</defs>`
+  
+  // 计算内容的中心点，将家族树居中显示在SVG中
+  const contentWidthActual = maxX - minX
+  const contentHeightActual = maxY - minY
+  
+  // 计算居中偏移量
+  const centerOffsetX = (svgWidth - contentWidthActual - margin.left - margin.right) / 2 + margin.left
+  const centerOffsetY = (svgHeight - contentHeightActual - margin.top - margin.bottom) / 2 + margin.top
+  
+  svg += `<g transform="translate(${centerOffsetX - minX}, ${centerOffsetY - minY})">`
+  
+  // 收集过继关系
+  const adoptiveRelationships = []
+  members.forEach(member => {
+    if (member.adoptiveFather) {
+      adoptiveRelationships.push({
+        child: member.id,
+        adoptiveFather: member.adoptiveFather
+      })
+    }
+  })
+
+  // 创建节点位置映射，用于绘制过继关系
+  const nodePositionMap = new Map()
+  treeData.descendants().forEach(node => {
+    nodePositionMap.set(node.data.id, {
+      x: node.y, // 水平位置
+      y: node.x  // 垂直位置
+    })
+  })
+  
+  // 确保所有过继关系中的成员都有位置
+  adoptiveRelationships.forEach(rel => {
+    // 确保被过继人有位置
+    if (!nodePositionMap.has(rel.child)) {
+      nodePositionMap.set(rel.child, {
+        x: 100, // 默认水平位置
+        y: 100  // 默认垂直位置
+      })
+    }
+    
+    // 确保过继人有位置
+    if (!nodePositionMap.has(rel.adoptiveFather)) {
+      nodePositionMap.set(rel.adoptiveFather, {
+        x: 200, // 默认水平位置
+        y: 100  // 默认垂直位置
+      })
+    }
+  })
+
+  // 绘制连接线
+  svg += `<g class="family-tree-links">`
+  // 绘制亲生关系连线
+  treeData.links().forEach(link => {
+    // 绘制从父节点到子节点的连线，水平布局
+    const path = `M${link.source.y},${link.source.x} C${(link.source.y + link.target.y) / 2},${link.source.x} ${(link.source.y + link.target.y) / 2},${link.target.x} ${link.target.y},${link.target.x}`
+    svg += `<path d="${path}" fill="none" stroke="#666" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" />`
+  })
+  
+  // 绘制过继关系连线（虚线箭头）
+  adoptiveRelationships.forEach(rel => {
+    const childPos = nodePositionMap.get(rel.child)
+    const adoptiveFatherPos = nodePositionMap.get(rel.adoptiveFather)
+    
+    if (childPos && adoptiveFatherPos) {
+      // 计算矩形的半宽和半高
+      const nodeHalfWidth = 75 // 矩形半宽
+      const nodeHalfHeight = 30 // 矩形半高
+      
+      // 对于水平树形布局：
+      // - 被过继人：箭头从其矩形右边缘出发
+      // - 过继人：箭头指向其矩形右边缘
+      // 被过继人矩形的右边缘
+      const startX = childPos.x + nodeHalfWidth
+      const startY = childPos.y
+      
+      // 过继人矩形的右边缘（箭头准确指向这里）
+      const endX = adoptiveFatherPos.x + nodeHalfWidth
+      const endY = adoptiveFatherPos.y
+      
+      // 绘制从被过继人矩形边缘到过继人矩形边缘的虚线箭头
+      const path = `M${startX},${startY} C${(startX + endX) / 2},${startY} ${(startX + endX) / 2},${endY} ${endX},${endY}`
+      svg += `<path d="${path}" fill="none" stroke="#999" stroke-width="1.5" stroke-dasharray="5,5" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#arrowhead)" />`
+    }
+  })
+  svg += `</g>`
+  
+  // 绘制节点
+  svg += `<g class="family-tree-nodes">`
+  treeData.descendants().forEach(node => {
+    const member = node.data
+    
+    // 计算节点位置
+    const x = node.y - nodeWidth / 2
+    const y = node.x - nodeHeight / 2
+    
+    // 节点样式
+    const isEmperor = member.isEmperor
+    const borderColor = isEmperor ? (member.emperorColor || '#ff0000') : '#333' // 皇帝边框改为红色
+    const borderWidth = isEmperor ? '3' : '1'
+    
+    // 悬停提示信息
+    let tooltip = ''
+    
+    // 如果数据中有排行信息，则显示第几子
+    if (member.rank) {
+      tooltip += `第${member.rank}子\n`
+    }
+    
+    // 拼接其他信息
+    tooltip += `姓名: ${member.realName}\n封号: ${member.title}\n生卒年: ${member.birthYear ? (member.birthYear < 0 ? `公元前${Math.abs(member.birthYear)}年` : `${member.birthYear}年`) : '未知'} - ${member.deathYear ? (member.deathYear < 0 ? `公元前${Math.abs(member.deathYear)}年` : `${member.deathYear}年`) : '未知'}`
+    
+    // 绘制节点组
+    svg += `<g class="family-tree-node" transform="translate(${x},${y})"><title>${tooltip}</title>`
+    
+    // 绘制节点矩形（固定大小，确保所有节点一致）
+    svg += `<rect width="${nodeWidth}" height="${nodeHeight}" rx="8" fill="#f0f8ff" stroke="${borderColor}" stroke-width="${borderWidth}" />`
+    
+    // 皇帝皇冠图标
+    if (isEmperor) {
+      svg += `<text x="10" y="20" font-size="14" fill="#ff0000">👑</text>` // 皇冠图标颜色改为红色
+    }
+    
+    // 绘制姓名和封号，确保垂直居中
+    const nameFontSize = 14
+    const titleFontSize = isEmperor ? 12 : 11
+    
+    // 计算文字位置，确保垂直居中
+    const nameY = nodeHeight / 2 - 5 // 姓名垂直居中位置
+    const titleY = isEmperor ? nodeHeight / 2 + 15 : nodeHeight / 2 + 15 // 封号垂直居中位置
+    
+    svg += `<text x="${nodeWidth / 2}" y="${nameY}" font-size="${nameFontSize}" font-weight="bold" text-anchor="middle" fill="#333" dominant-baseline="middle">${member.name}</text>`
+    svg += `<text x="${nodeWidth / 2}" y="${titleY}" font-size="${titleFontSize}" text-anchor="middle" fill="#666" dominant-baseline="middle">${member.title}</text>`
+    
+    svg += `</g>`
+  })
+  svg += `</g>`
+  
+  svg += `</g>`
+  svg += `</svg>`
+  
+  return svg
+}
 
 
 </script>
@@ -195,7 +504,9 @@ onMounted(() => {
         >
           <!-- 朝代头部信息 -->
           <div class="dynasty-header">
-            <h2>{{ dynasty.name }}</h2>
+            <h2>
+              <span class="dynasty-name-link" @click="showFamilyTreePopup(dynasty)">{{ dynasty.name }}</span>
+            </h2>
             <div class="dynasty-years">
               {{ dynasty.startYear < 0 ? `公元前${Math.abs(dynasty.startYear)}年` : `${dynasty.startYear}年` }} - 
               {{ dynasty.endYear < 0 ? `公元前${Math.abs(dynasty.endYear)}年` : `${dynasty.endYear}年` }}
@@ -244,6 +555,19 @@ onMounted(() => {
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 族谱弹出框 -->
+  <div v-if="showFamilyTree" class="family-tree-popup-overlay" @click="closeFamilyTreePopup">
+    <div class="family-tree-popup" @click.stop>
+      <div class="popup-header">
+        <h3>{{ currentDynasty?.name }}皇室族谱</h3>
+        <button class="close-btn" @click="closeFamilyTreePopup">×</button>
+      </div>
+      <div class="popup-content">
+        <div v-html="familyTreeSvg"></div>
       </div>
     </div>
   </div>
@@ -367,6 +691,93 @@ onMounted(() => {
   margin: 0;
   font-size: 18px;
   text-align: left;
+}
+
+/* 朝代名称超链接样式 */
+.dynasty-name-link {
+  cursor: pointer;
+  color: #ffffff;
+  text-decoration: underline;
+  transition: all 0.3s ease;
+}
+
+.dynasty-name-link:hover {
+  text-decoration: none;
+}
+
+/* 族谱弹出框样式 */
+.family-tree-popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  /* 移除overflow: auto，避免与内部滚动条冲突 */
+}
+
+.family-tree-popup {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  width: 90%;
+  max-width: 1400px;
+  height: 90vh;
+  /* 移除max-height，使用固定height */
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  background-color: #f5f5f5;
+  border-bottom: 1px solid #e0e0e0;
+  border-radius: 8px 8px 0 0;
+  flex-shrink: 0;
+}
+
+.popup-header h3 {
+  margin: 0;
+  font-size: 20px;
+  color: #333;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #666;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.close-btn:hover {
+  color: #333;
+}
+
+.popup-content {
+  overflow: auto;
+  flex: 1;
+  white-space: nowrap;
+  /* 添加内边距避免内容被滚动条遮挡 */
+  box-sizing: border-box;
+}
+
+.popup-content svg {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: none;
+  max-height: none;
+  overflow: visible;
 }
 
 .dynasty-header .dynasty-years {
