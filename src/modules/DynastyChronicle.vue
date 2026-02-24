@@ -299,7 +299,7 @@ const drawFamilyTree = (dynastyName, contentWidth, contentHeight) => {
   const treeData = treeLayout(hierarchy)
   
   // 计算实际需要的SVG尺寸
-  const nodeWidth = 150
+  const nodeWidth = 180
   const nodeHeight = 60
   const margin = { top: 50, right: 50, bottom: 50, left: 100 }
   
