@@ -46,6 +46,36 @@ const navigateTo = (path) => {
           </div>
           <div class="card-arrow">→</div>
         </div>
+
+        <!-- 模块 4: 帝王家脉 -->
+        <div class="module-card" @click="navigateTo('/royal-family')">
+          <div class="card-icon">👑</div>
+          <div class="card-content">
+            <h2>帝王家脉</h2>
+            <p>可视化展示皇室家族血缘关系，探索帝王世系传承脉络。</p>
+          </div>
+          <div class="card-arrow">→</div>
+        </div>
+
+        <!-- 模块 5: 红颜青史 -->
+        <div class="module-card" @click="navigateTo('/women-in-history')">
+          <div class="card-icon">🌸</div>
+          <div class="card-content">
+            <h2>红颜青史</h2>
+            <p>讲述历史上杰出女性的故事，无论功过是非，都在历史长河中留下印记。</p>
+          </div>
+          <div class="card-arrow">→</div>
+        </div>
+
+        <!-- 模块 6: 历史人物 -->
+        <div class="module-card" @click="navigateTo('/historical-figures')">
+          <div class="card-icon">👤</div>
+          <div class="card-content">
+            <h2>历史人物</h2>
+            <p>汇聚武将、文臣、文人等各类历史人物，展现中华历史的人物群像。</p>
+          </div>
+          <div class="card-arrow">→</div>
+        </div>
       </div>
     </div>
     
@@ -63,14 +93,14 @@ const navigateTo = (path) => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  overflow-y: auto;
 }
 
 .portal-content {
   max-width: 1200px;
   width: 90%;
-  padding: 40px;
 }
 
 .portal-header {
@@ -94,15 +124,15 @@ const navigateTo = (path) => {
 
 .modules-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 30px;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
   justify-content: center;
 }
 
 .module-card {
   background: white;
-  border-radius: 16px;
-  padding: 30px;
+  border-radius: 12px;
+  padding: 20px;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   box-shadow: 0 4px 6px rgba(0,0,0,0.05);
@@ -126,8 +156,8 @@ const navigateTo = (path) => {
 }
 
 .card-icon {
-  font-size: 4rem;
-  margin-bottom: 20px;
+  font-size: 3rem;
+  margin-bottom: 15px;
   transition: transform 0.3s ease;
 }
 
@@ -136,15 +166,15 @@ const navigateTo = (path) => {
 }
 
 .card-content h2 {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   color: #2c3e50;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .card-content p {
   color: #7f8c8d;
-  line-height: 1.6;
-  font-size: 0.95rem;
+  line-height: 1.5;
+  font-size: 0.85rem;
 }
 
 .card-arrow {
