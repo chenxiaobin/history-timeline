@@ -1,10 +1,11 @@
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { royalFamilyTree } from '../data/royalFamilyTree.js'
 import FamilyTree from '../components/FamilyTree.vue'
 
 const router = useRouter()
+const route = useRoute()
 
 // 返回首页
 const goBack = () => {
@@ -28,9 +29,40 @@ const updateTreeSize = () => {
   }
 }
 
+// 从URL参数获取朝代
+const getDynastyFromParams = () => {
+  const dynastyParam = route.query.dynasty
+  if (dynastyParam && dynasties.includes(dynastyParam)) {
+    return dynastyParam
+  }
+  return null
+}
+
+// 初始化时从URL参数获取朝代
 onMounted(() => {
   updateTreeSize()
   window.addEventListener('resize', updateTreeSize)
+  
+  // 从URL参数获取朝代
+  const dynastyFromParams = getDynastyFromParams()
+  if (dynastyFromParams) {
+    selectedDynasty.value = dynastyFromParams
+  }
+})
+
+// 监听selectedDynasty变化，更新路由参数
+watch(selectedDynasty, (newDynasty) => {
+  router.push({
+    path: '/royal-family',
+    query: { dynasty: newDynasty }
+  })
+})
+
+// 监听路由参数变化，更新selectedDynasty
+watch(() => route.query.dynasty, (newDynasty) => {
+  if (newDynasty && dynasties.includes(newDynasty) && newDynasty !== selectedDynasty.value) {
+    selectedDynasty.value = newDynasty
+  }
 })
 </script>
 

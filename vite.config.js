@@ -9,5 +9,9 @@ export default defineConfig({
     VueDevTools({
       launchEditor: 'cursor'
     })
-  ]
+  ],
+  server: {
+    open: true,
+    port: 5174
+  }
 })

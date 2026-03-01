@@ -25,8 +25,6 @@ const props = defineProps({
 // SVG元素引用
 const svgRef = ref(null)
 
-// 家族树数据
-const treeData = ref(null)
 const nodeWidth = 180
 const nodeHeight = 60
 const margin = { top: 50, right: 50, bottom: 50, left: 100 }
@@ -34,18 +32,30 @@ const margin = { top: 50, right: 50, bottom: 50, left: 100 }
 // 构建层次数据结构
 const buildHierarchy = (members) => {
   const nodeMap = new Map()
+  const spouseNodes = new Map()
   
   // 创建所有节点
   members.forEach(member => {
-    nodeMap.set(member.id, {
-      ...member,
-      children: []
-    })
+    if (!member.isSpouseOnly) {
+      nodeMap.set(member.id, {
+        ...member,
+        children: [],
+        spouse: member.spouse || null
+      })
+    } else {
+      spouseNodes.set(member.id, {
+        ...member,
+        isSpouseNode: true  // 添加配偶节点标记
+      })
+    }
   })
   
   // 构建父子关系
   let rootNode = null
   members.forEach(member => {
+    // 跳过配偶节点
+    if (member.isSpouseOnly) return
+    
     const currentNode = nodeMap.get(member.id)
     if (member.father === null) {
       rootNode = currentNode
@@ -57,7 +67,50 @@ const buildHierarchy = (members) => {
     }
   })
   
-  return rootNode
+  // 将配偶添加为丈夫的第一个子节点
+  members.forEach(member => {
+    // 跳过配偶节点
+    if (member.isSpouseOnly) return
+    
+    if (member.spouse) {
+      const husbandNode = nodeMap.get(member.id)
+      const spouseNode = spouseNodes.get(member.spouse)
+      
+      if (husbandNode && spouseNode) {
+        // 将配偶节点作为第一个子节点插入
+        husbandNode.children.unshift(spouseNode)
+      }
+    }
+  })
+  
+  // 对所有节点的children数组按照rank字段进行升序排序
+  nodeMap.forEach(node => {
+    if (node.children.length > 0) {
+      // 排序时忽略配偶节点（已经在第一个位置）
+      const spouseChild = node.children.find(child => child.isSpouseNode)
+      const otherChildren = node.children.filter(child => !child.isSpouseNode)
+      
+      // 对其他子节点按rank排序
+      otherChildren.sort((a, b) => {
+        // 如果rank不存在，将其视为0
+        const rankA = a.rank || 0
+        const rankB = b.rank || 0
+        return rankA - rankB
+      })
+      
+      // 重新组合children数组，配偶节点始终在第一位
+      if (spouseChild) {
+        node.children = [spouseChild, ...otherChildren]
+      } else {
+        node.children = otherChildren
+      }
+    }
+  })
+  
+  return {
+    root: rootNode,
+    spouseNodes
+  }
 }
 
 // 生成家族树数据
@@ -66,8 +119,8 @@ const generateTreeData = () => {
   if (!familyTree) return null
   
   const members = familyTree.members
-  const root = buildHierarchy(members)
-  if (!root) return null
+  const { root: hierarchyRoot, spouseNodes } = buildHierarchy(members)
+  if (!hierarchyRoot) return null
   
   // 创建水平方向的tree布局，使用nodeSize控制节点间距
   const treeLayout = d3.tree()
@@ -75,7 +128,7 @@ const generateTreeData = () => {
     .separation((a, b) => (a.parent === b.parent ? 1.2 : 2)) // 增加节点间距
   
   // 生成层次数据
-  const hierarchy = d3.hierarchy(root)
+  const hierarchy = d3.hierarchy(hierarchyRoot)
   const tree = treeLayout(hierarchy)
   
   // 收集过继关系
@@ -88,11 +141,24 @@ const generateTreeData = () => {
       })
     }
   })
+  
+  // 收集配偶关系
+  const spouseRelationships = []
+  members.forEach(member => {
+    if (member.spouse) {
+      spouseRelationships.push({
+        person: member.id,
+        spouse: member.spouse
+      })
+    }
+  })
 
   return {
     tree,
     members,
-    adoptiveRelationships
+    adoptiveRelationships,
+    spouseRelationships,
+    spouseNodes
   }
 }
 
@@ -123,7 +189,7 @@ const drawFamilyTree = () => {
   const data = generateTreeData()
   if (!data) return
   
-  const { tree, members, adoptiveRelationships } = data
+  const { tree, members, adoptiveRelationships, spouseRelationships, spouseNodes } = data
   const { minX, maxX, minY, maxY } = calculateNodeBounds(tree)
   
   // 清除现有内容
@@ -148,8 +214,8 @@ const drawFamilyTree = () => {
     .attr('orient', 'auto')
     .append('polygon')
     .attr('points', '0 0, 10 3, 0 6')
-    .attr('fill', '#999')
-    .attr('stroke', '#999')
+    .attr('fill', '#f00')
+    .attr('stroke', '#f00')
     .attr('stroke-width', 0.5)
   
   // 计算内容的中心点，将家族树居中显示在SVG中
@@ -212,12 +278,33 @@ const drawFamilyTree = () => {
     .append('path')
     .attr('class', 'link')
     .attr('d', (d) => {
-      // 绘制从父节点到子节点的连线，水平布局
-      const path = `M${d.source.y},${d.source.x} C${(d.source.y + d.target.y) / 2},${d.source.x} ${(d.source.y + d.target.y) / 2},${d.target.x} ${d.target.y},${d.target.x}`
+      // 计算节点宽度的一半
+      const halfNodeWidth = nodeWidth / 2
+      
+      let sourceX, targetX
+      const sourceY = d.source.x
+      const targetY = d.target.x
+      
+      // 根据节点位置自动判断连线方向
+      if (d.source.y < d.target.y) {
+        // 从左到右：父节点右侧中点 → 子节点左侧中点
+        sourceX = d.source.y + halfNodeWidth
+        targetX = d.target.y - halfNodeWidth
+      } else {
+        // 从右到左：父节点左侧中点 → 子节点右侧中点
+        sourceX = d.source.y - halfNodeWidth
+        targetX = d.target.y + halfNodeWidth
+      }
+      
+      // 绘制曲线
+      const path = `M${sourceX},${sourceY} C${(sourceX + targetX) / 2},${sourceY} ${(sourceX + targetX) / 2},${targetY} ${targetX},${targetY}`
       return path
     })
     .attr('fill', 'none')
-    .attr('stroke', '#666')
+    .attr('stroke', (d) => {
+      // 如果目标节点是配偶节点，连线颜色为红色
+      return d.target.data.isSpouseNode ? '#f00' : '#666'
+    })
     .attr('stroke-width', 1.5)
     .attr('stroke-linejoin', 'round')
     .attr('stroke-linecap', 'round')
@@ -233,29 +320,32 @@ const drawFamilyTree = () => {
       const adoptiveFatherPos = nodePositionMap.get(d.adoptiveFather)
       
       if (childPos && adoptiveFatherPos) {
-        // 计算矩形的半宽和半高
-        const nodeHalfWidth = 75 // 矩形半宽
-        const nodeHalfHeight = 30 // 矩形半高
+        // 计算节点宽度的一半
+        const halfNodeWidth = nodeWidth / 2
         
-        // 对于水平树形布局：
-        // - 被过继人：箭头从其矩形右边缘出发
-        // - 过继人：箭头指向其矩形右边缘
-        // 被过继人矩形的右边缘
-        const startX = childPos.x + nodeHalfWidth
-        const startY = childPos.y
+        let sourceX, targetX
+        const sourceY = childPos.y
+        const targetY = adoptiveFatherPos.y
         
-        // 过继人矩形的右边缘（箭头准确指向这里）
-        const endX = adoptiveFatherPos.x + nodeHalfWidth
-        const endY = adoptiveFatherPos.y
+        // 根据节点位置自动判断连线方向
+        if (childPos.x < adoptiveFatherPos.x) {
+          // 从左到右：子节点右侧中点 → 父节点左侧中点
+          sourceX = childPos.x + halfNodeWidth
+          targetX = adoptiveFatherPos.x - halfNodeWidth
+        } else {
+          // 从右到左：子节点左侧中点 → 父节点右侧中点
+          sourceX = childPos.x - halfNodeWidth
+          targetX = adoptiveFatherPos.x + halfNodeWidth
+        }
         
-        // 绘制从被过继人矩形边缘到过继人矩形边缘的虚线箭头
-        const path = `M${startX},${startY} C${(startX + endX) / 2},${startY} ${(startX + endX) / 2},${endY} ${endX},${endY}`
+        // 绘制曲线
+        const path = `M${sourceX},${sourceY} C${(sourceX + targetX) / 2},${sourceY} ${(sourceX + targetX) / 2},${targetY} ${targetX},${targetY}`
         return path
       }
       return ''
     })
     .attr('fill', 'none')
-    .attr('stroke', '#999')
+    .attr('stroke', '#f00')
     .attr('stroke-width', 1.5)
     .attr('stroke-dasharray', '5,5')
     .attr('stroke-linejoin', 'round')
@@ -281,12 +371,24 @@ const drawFamilyTree = () => {
     .attr('width', nodeWidth)
     .attr('height', nodeHeight)
     .attr('rx', 8)
-    .attr('fill', '#f0f8ff')
+    .attr('fill', (d) => {
+      // 临朝称制的节点使用浅红色背景
+      if (d.data.title && d.data.title.includes('临朝称制')) {
+        return '#ffecec' // 浅红色
+      }
+      return '#f0f8ff' // 默认浅蓝色
+    })
     .attr('stroke', (d) => {
+      if (d.data.isSpouseNode) {
+        return '#f00' // 配偶节点边框为红色
+      }
       const isEmperor = d.data.isEmperor
-      return isEmperor ? (d.data.emperorColor || '#ff0000') : '#333'
+      return isEmperor ? (d.data.emperorColor || '#FF8433') : '#333'
     })
     .attr('stroke-width', (d) => {
+      if (d.data.isSpouseNode) {
+        return '3' // 配偶节点边框宽度
+      }
       return d.data.isEmperor ? '3' : '1'
     })
   
@@ -297,6 +399,15 @@ const drawFamilyTree = () => {
     .attr('y', 20)
     .attr('font-size', 14)
     .attr('fill', '#ff0000')
+    .text('👑')
+  
+  // 皇后王冠图标（临朝称制的配偶）
+  nodes.filter((d) => d.data.isSpouseNode)
+    .append('text')
+    .attr('x', 10)
+    .attr('y', 20)
+    .attr('font-size', 14)
+    .attr('fill', '#FFD700') // 使用金色区分
     .text('👑')
   
   // 绘制姓名
@@ -336,6 +447,8 @@ const drawFamilyTree = () => {
       
       return tooltip
     })
+  
+  // 配偶节点现在作为丈夫的子节点处理，不再需要单独绘制
   
   // 计算合适的初始缩放比例，确保全部内容可见
   const contentWidth = maxX - minX + margin.left + margin.right
